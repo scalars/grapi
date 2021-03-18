@@ -1,0 +1,18 @@
+scalar Url
+scalar Email
+scalar DateTime
+
+enum STATUS {
+    OK
+    NOT_OK
+}
+
+type users @Model(dataSource: "memory", key: "users_filters"){
+    id: ID! @unique @autoGen
+    name: String!
+    age: Int
+    weight: Float
+    married: Boolean
+    website: Url
+    email: Email
+}

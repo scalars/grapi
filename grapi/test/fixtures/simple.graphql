@@ -1,0 +1,47 @@
+scalar JSON
+
+enum STATUS {
+  OK
+  NOT_OK
+}
+
+type Location {
+  lng: String
+  lat: String
+}
+
+type Note {
+  title: String
+  text: String
+}
+
+# User-Group on members: many-to-many
+# User-Group on admin: one-to-many
+# User-Book: one-to-many
+# User-User on friend: one-to-one
+type User @Model(dataSource: "memory", key: "users") {
+  id: ID! @unique @autoGen
+  username: String!
+  email: String
+  status: STATUS
+  attributes: JSON
+  books: [Book!]!
+  groups: [Group!]! @relation(name: "Membership")
+  location: Location
+  friend: User
+  adminedGroups: [Group!]! @relation(name: "Admin")
+}
+
+type Book @Model(dataSource: "memory", key: "books") {
+  id: ID! @unique @autoGen
+  name: String!
+  author: User
+  notes: [Note!]!
+}
+
+type Group @Model(dataSource: "memory", key: "groups") {
+  id: ID! @unique @autoGen
+  name: String!
+  members: [User!]! @relation(name: "Membership")
+  admin: User @relation(name: "Admin")
+}

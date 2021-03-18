@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "grapi/src/**/*.ts",
+    "grapi/test/**/*.ts",
+    "grapi-mongodb/src/**/*.ts",
+    "grapi-mongodb/test/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

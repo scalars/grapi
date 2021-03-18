@@ -1,0 +1,30 @@
+type AuthorRelation implements Relation @config( name: "AuthorRelation" foreignKey: { key: "bookId", side: User } )
+type TeamPlayers implements Relation @config( name: "TeamPlayers" foreignKey: "userTeamId" )
+type GroupsUsers implements Relation @config( name: "GroupsUsers" )
+
+type User @Model(dataSource: "memory", key: "users") {
+    id: ID! @unique @autoGen
+    username: String! @unique
+    email: String
+    groups: [ Group! ] @relation(with: GroupsUsers)
+    book: Book @relation(with: AuthorRelation)
+    team: Team @relation(with: TeamPlayers)
+}
+
+type Book @Model(dataSource: "memory", key: "books") {
+    id: ID! @unique @autoGen
+    name: String @unique
+    author: User @relation(with: AuthorRelation)
+}
+
+type Team @Model(dataSource: "memory", key: "teams") {
+    id: ID! @unique @autoGen
+    name: String @unique
+    players: [ User! ] @relation(with: TeamPlayers)
+}
+
+type Group @Model(dataSource: "memory", key: "groups") {
+    id: ID! @unique @autoGen
+    name: String @unique
+    members: [ User! ] @relation(with: GroupsUsers)
+}

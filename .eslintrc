@@ -1,0 +1,55 @@
+{
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+        "@typescript-eslint",
+        "simple-import-sort"
+    ],
+    "parserOptions": {
+        "project": "./tsconfig.json"
+    },
+    "root": true,
+    "rules": {
+        "simple-import-sort/imports": "error",
+        "simple-import-sort/exports": "error",
+        "object-curly-newline": ["error", {
+            "ImportDeclaration": {
+                "multiline": true
+            },
+            "ExportDeclaration": {
+                "multiline": true,
+                "minProperties": 3
+            }
+        }],
+        "@typescript-eslint/restrict-plus-operands": "error",
+        "@typescript-eslint/ban-types": "warn",
+        "@typescript-eslint/no-inferrable-types": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "error",
+        "@typescript-eslint/explicit-module-boundary-types": "off",
+        "@typescript-eslint/indent": ["error", 4, {
+            "FunctionDeclaration": {"parameters": "first"},
+            "FunctionExpression": {"parameters": "first"}
+        }],
+        "@typescript-eslint/no-use-before-define": ["error", {
+            "variables": true,
+            "functions": true
+        }],
+        "no-case-declarations": "off",
+        "quotes": ["error", "single", {
+            "allowTemplateLiterals": true
+        }],
+        "semi": [ "error", "never" ],
+        "camelcase": "off",
+        "array-bracket-spacing": [ "error", "always" ],
+        "comma-spacing": ["error", { "before": false, "after": true } ],
+        "object-curly-spacing": [ "error", "always" ],
+        "block-spacing": [ "error", "always" ],
+        "space-in-parens": [ "error", "always" ],
+        "space-infix-ops": [ "error", { "int32Hint": true } ]
+    }
+}

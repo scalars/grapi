@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "sourceMap": false
+  },
+  "files": [],
+  "include": [],
+  "references": [
+    { "path": "./grapi/tsconfig.release.json",  },
+    { "path": "./grapi-mongodb/tsconfig.release.json" }
+  ]
+}
