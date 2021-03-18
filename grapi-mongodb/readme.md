@@ -9,11 +9,11 @@
 ## MongoDB Data-Source
 
 ```shell
-yarn add @scalars/mongodb
+yarn add @scalars/grapi-mongodb
 ```
 Or
 ```shell
-npm install @scalars/mongodb
+npm install @scalars/grapi-mongodb
 ```
 
 ```graphql
