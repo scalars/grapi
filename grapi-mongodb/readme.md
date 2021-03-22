@@ -24,7 +24,7 @@ type VehiclesFromActor implements Relation @config(
 )
 
 type Actor @Model( dataSource: "datasource", key: "Actor" ) {
-    id: ID ! @unique @unique
+    id: ID ! @unique
     name: String !
     vehicles: [ Vehicle ! ] ! @relation( with: VehiclesFromActor )
 }

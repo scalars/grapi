@@ -74,53 +74,33 @@ const startGraphQLServer = async () => {
 startGraphQLServer()
 ```
 
-### Auto-Generated GraphQL Schema
-
-Main characteristic of Grapi is autogen a GraphQL API with types defined in SDL, the previous schema create the next resolvers.
-
 #### You can see the GraphQL server in action with
+
 [ GraphQL PlayGround ](https://www.electronjs.org/apps/graphql-playground)
 
 [ Insomnia ](https://insomnia.rest/download)
 
 [ Graphiql ](https://github.com/graphql/graphiql)
 
+### Auto-Generated GraphQL Schema
+
+Main characteristic of Grapi is autogen a GraphQL API with types defined in SDL, the previous schema create the next resolvers.
+
 <br/>
 
-#### Singular
+#### Singular and Plural
 ```graphql
-# File schema.graphql
 type Query {
-    actor( where: ActorWhereUniqueInput ): Actor!
-}
-```
-#### Plural
-```graphql
-# File schema.graphql
-type Query {
+    actor( where: ActorWhereUniqueInput ): Actor !
     actors( where: ActorWhereInput ): [ Actor ! ] !
 }
 ```
 
-#### Create
+#### Create - Update and Delete
 ```graphql
-# File schema.graphql
 type Mutation {
     createActor( data: ActorCreateInput ): Actor !
-}
-```
-
-#### Update
-```graphql
-# File schema.graphql
-type Mutation {
     updateActor( where: ActorWhereUniqueInput data: ActorUpdateInput ): Actor !
-}
-```
-#### Delete
-```graphql
-# File schema.graphql
-type Mutation {
     deleteActor( where: ActorWhereUniqueInput ): Actor !
 }
 ```
