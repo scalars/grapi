@@ -1,6 +1,6 @@
 {
   "name": "@scalars/grapi",
-  "version": "2.0.11",
+  "version": "2.0.12",
   "description": "Grapi Schema Generator For GraphQL Server",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
