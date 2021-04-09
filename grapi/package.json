@@ -1,6 +1,6 @@
 {
   "name": "@scalars/grapi",
-  "version": "2.0.9",
+  "version": "2.0.11",
   "description": "Grapi Schema Generator For GraphQL Server",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -32,13 +32,13 @@
   "author": "madrov",
   "license": "ISC",
   "devDependencies": {
-    "@types/mongodb": "^3.5.32",
+    "@types/mongodb": "^3.6.12",
     "apollo-server": "^2.15.0",
     "apollo-server-koa": "^2.15.0",
     "apollo-server-testing": "^2.15.0",
     "graphql-type-json": "^0.3.2",
     "koa": "^2.6.2",
-    "mongodb": "^3.6.2",
+    "mongodb": "^3.6.6",
     "rimraf": "^2.6.2"
   },
   "peerDependencies": {
