@@ -1,5 +1,5 @@
 import chai from 'chai'
-import chaiHttp = require( 'chai-http' );
+import chaiHttp from 'chai-http'
 chai.use( chaiHttp )
 import { MongodbDataSourceGroup } from '@scalars/grapi-mongodb'
 
