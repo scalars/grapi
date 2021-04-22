@@ -62,7 +62,7 @@ export default class QueryPlugin implements Plugin {
             `orderBy: ${orderInputName}`
         ]
         root.addQuery(
-            `${findManyQueryName} ( ${ argsOnFindMany.join( `,` ) } ): [ ${modelType} ]!${ directives }`
+            `${findManyQueryName} ( ${ argsOnFindMany.join( `,` ) } ): [ ${modelType} ! ] !${ directives }`
         )
     }
 

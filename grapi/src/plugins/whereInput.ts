@@ -135,9 +135,7 @@ export default class WhereInputPlugin implements Plugin {
             case DataModelType.STRING:
                 inputFields.push( ...WhereInputPlugin.parseEqFilter( name, typeName ) )
                 inputFields.push( ...WhereInputPlugin.parseContainsFilter( name, typeName ) )
-                inputFields.push( {
-                    fieldName: `${name}_in`, type: `[${typeName}]`,
-                } )
+                inputFields.push( ...WhereInputPlugin.parseInFilter( name, typeName ) )
                 break
             case DataModelType.INT:
                 inputFields.push( ...WhereInputPlugin.parseEqFilter( name, typeName ) )
@@ -158,6 +156,9 @@ export default class WhereInputPlugin implements Plugin {
                 inputFields.push( ...WhereInputPlugin.parseContainsFilter( name, 'String' ) )
                 break
             case DataModelType.ID:
+                inputFields.push( ...WhereInputPlugin.parseEqFilter( name, typeName ) )
+                inputFields.push( ...WhereInputPlugin.parseInFilter( name, typeName ) )
+                break
             case DataModelType.BOOLEAN:
                 inputFields.push( ...WhereInputPlugin.parseEqFilter( name, typeName ) )
                 break
@@ -219,6 +220,12 @@ export default class WhereInputPlugin implements Plugin {
 
     private static parseContainsFilter ( name: string, type: string ): Array<{ fieldName: string; type: string } > {
         return [ { fieldName: `${name}_contains`, type }, { fieldName: `${name}_notcontains`, type } ]
+    }
+
+    private static parseInFilter ( name: string, type: string ): Array<{ fieldName: string; type: string } > {
+        return [
+            { fieldName: `${name}_in`, type: `[ ${type} ]` }
+        ]
     }
 
     private static parseGtLtInFilter ( name: string, type: string ): Array<{ fieldName: string; type: string } > {

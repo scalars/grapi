@@ -519,4 +519,5 @@ FodyWeavers.xsd
 yarn.lock
 **/*.tsbuildinfo
 lib/
+grapi/src/local/
 grapi/readme.md

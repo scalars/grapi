@@ -1,7 +1,19 @@
 {
   "name": "@scalars/grapi",
-  "version": "2.0.12",
+  "version": "2.0.15",
   "description": "Grapi Schema Generator For GraphQL Server",
+  "keywords": [
+    "grapi",
+    "scalars",
+    "graphql",
+    "mongo",
+    "queries",
+    "mongodb",
+    "graphql-server",
+    "graphql-schema",
+    "mutations",
+    "graphql-js"
+  ],
   "main": "./lib/index.js",
   "module": "./lib/index.js",
   "jsnext:main": "./lib/index.js",

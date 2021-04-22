@@ -72,12 +72,12 @@ export default class UniToOne implements Relation, WithForeignKey {
         return { [this.foreignKey]: null }
     }
 
-    public async join( data: Record<string, any>, context: any ): Promise<any> {
-        const targetId = data[this.foreignKey]
-        if ( !targetId ) {
+    public async join( data: Record<string, any>, _: any ): Promise<any> {
+        const targetId = data[ this.foreignKey ]
+        if ( ! targetId ) {
             return null
         }
-        const toOneData = await this.targetModel.getDataSource().findOneById( targetId, context )
+        const toOneData = await this.targetModel.getDataSource().findOneById( targetId )
         return isEmpty( toOneData ) ? null : toOneData
     }
 }
