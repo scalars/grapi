@@ -11,9 +11,9 @@ export interface DataSourceGroup {
 }
 
 export class MongodbDataSourceGroup implements DataSourceGroup {
-    private uri: string;
-    private dbName: string;
-    private mongoClient: any;
+    private readonly uri: string;
+    private readonly dbName: string;
+    private mongoClient: MongoClient;
     private db: Db;
 
     constructor( uri: string, dbName: string ) {
@@ -40,9 +40,9 @@ export class MongodbDataSourceGroup implements DataSourceGroup {
         return this.db
     }
 
-    public close(): void {
+    public async close(): Promise<void> {
         if ( this.mongoClient ) {
-            this.mongoClient.close()
+            await this.mongoClient.close( true )
         }
     }
 }

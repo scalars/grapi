@@ -1,11 +1,23 @@
 {
   "name": "@scalars/grapi-mongodb",
-  "version": "2.0.12",
+  "version": "2.0.15",
   "description": "The mongodb package of Grapi",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
   "jsnext:main": "./lib/index.js",
   "typings": "./lib/index.d.ts",
+  "keywords": [
+    "grapi",
+    "scalars",
+    "graphql",
+    "mongo",
+    "queries",
+    "mongodb",
+    "graphql-server",
+    "graphql-schema",
+    "mutations",
+    "graphql-js"
+  ],
   "files": [
     "lib"
   ],
@@ -23,7 +35,7 @@
   "author": "madrov",
   "license": "Apache-2.0",
   "dependencies": {
-    "@scalars/grapi": "^2.0.12",
+    "@scalars/grapi": "^2.0.15",
     "mongodb": "^3.6.6",
     "mongodb-client-encryption": "^1.2.3"
   },
