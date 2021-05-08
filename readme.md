@@ -39,7 +39,16 @@ type Actor @Model( dataSource: "datasource", key: "Actor" ) {
 
 **Grapi** read SDL types and autogen resolvers for query and mutations on every model defined in SDL schema.
 
+**Grapi for Typescript**
+```shell
+yarn init
+yarn add @scalars/grapi @scalars/grapi-mongodb
+yarn add ts-node apollo-server 
+yarn add -D typescript
+```
+
 ```typescript
+// server.ts
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { MongodbDataSourceGroup } from '@scalars/grapi-mongodb'
@@ -49,7 +58,7 @@ import { ApolloServer } from 'apollo-server'
 const getDataSource = async () => {
     const datasource = new MongodbDataSourceGroup(
         process.env.MONGO_URI,
-        process.env.DATA_BASE_NAME
+        process.env.MONGO_DATA_BASE_NAME
     )
     await datasource.initialize()
     return datasource
@@ -73,6 +82,57 @@ const startGraphQLServer = async () => {
 
 startGraphQLServer()
 ```
+Run server
+```
+yarn ts-node server.ts 
+```
+
+**Grapi for JavaScript**
+```shell
+yarn init
+yarn add @scalars/grapi @scalars/grapi-mongodb
+yarn add apollo-server
+```
+
+```javascript
+// server.js
+const { readFileSync } = require( 'fs' )
+const { resolve } = require( 'path' )
+const { MongodbDataSourceGroup } = require( '@scalars/grapi-mongodb' )
+const { Grapi } = require( '@scalars/grapi' )
+const { ApolloServer } = require( 'apollo-server' )
+
+const getDataSource = async () => {
+    const datasource = new MongodbDataSourceGroup(
+        process.env.MONGO_URI,
+        process.env.MONGO_DATA_BASE_NAME
+    )
+    await datasource.initialize()
+    return datasource
+}
+
+const startGraphQLServer = async () => {
+    const datasource = await getDataSource()
+    const sdl = readFileSync( resolve( __dirname, 'schema.graphql' ) ).toString()
+    const grapi = new Grapi( {
+        sdl,
+        dataSources: {
+            datasource: ( args ) => datasource.getDataSource( args.key ),
+        }
+    } )
+    const server = new ApolloServer( grapi.createApolloConfig() )
+    server.listen().then( ( { url } ) => {
+        console.info( `GraphQL Server On: ${ url }` )
+        console.info( `Go To Browser And See PlayGround` )
+    } )
+}
+
+startGraphQLServer()
+```
+Run server
+```
+node server.js
+```
 
 #### You can see the GraphQL server in action with
 
@@ -81,6 +141,9 @@ startGraphQLServer()
 [ Insomnia ](https://insomnia.rest/download)
 
 [ Graphiql ](https://github.com/graphql/graphiql)
+
+Also Apollo Server offer a GraphQL Playground open your browser
+[ http://localhost:4000 ]( http://localhost:4000 )
 
 ### Auto-Generated GraphQL Schema
 
@@ -105,10 +168,27 @@ type Mutation {
 }
 ```
 
-These resolvers serve a schema in a GraphQL Server. Admit recover and save data from datasource provided by Mongo DataSource or your custom data source.
+These resolvers serve a schema in a GraphQL Server. 
+Admit retrieve and save data from datasource provided 
+by Mongo DataSource or your custom data source.
 
 
 ### RelationShip Made Easy
+
+Database relationships are associations between tables. 
+Grapi support autogen resolvers for queries and mutations in schema relations. 
+It's easy create a complex server with data relations to retrieve and save data.
+
+Next schema examples shows how to create
+different relationship types.
+
+> The ```key``` value in directive ```@Model```
+> is the collection name in mongodb
+> 
+> The ```datasource``` value in directive ```@Model```
+> is datasource alias defined in Grapi instance into dataSources object.
+> That alias is arbitrary and is allow to named as you wish.
+> The only condition is that in schema the alias has to be the same
 
 #### One To One Unidirectional
 ```graphql
@@ -176,7 +256,7 @@ type Vehicle @Model( dataSource: "datasource", key: "Vehicle" ) {
 }
 ```
 
-#### Many To Many Bidirectional
+#### Many To Many
 ```graphql
 # File schema.graphql
 type MoviesFromActorManyToMany implements Relation @config( name: "MoviesFromActorManyToMany" )
