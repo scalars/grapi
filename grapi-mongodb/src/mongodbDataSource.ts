@@ -8,7 +8,7 @@ import {
     PaginatedResponse,
     Where
 } from '@scalars/grapi'
-import { Db } from 'mongodb'
+import { Db, MongoError, ObjectId } from 'mongodb'
 
 import { first, get, isEmpty } from './lodash'
 import { MongodbData } from './mongodbData'
@@ -42,21 +42,18 @@ export class MongodbDataSource extends MongodbData implements DataSource {
     public async create( mutation: Mutation ): Promise<any> {
         const payload = this.transformMutation( mutation )
         try {
-            const insertedItem = await this.db.collection( this.collectionName ).insertOne( payload )
+            const insertedItem: { _id: ObjectId, id: string } = await new Promise( ( resolve, reject ) => {
+                this.db.collection( this.collectionName ).insertOne( payload, ( error: MongoError, response ) => {
+                    if ( error ) { reject( error ) }
+                    resolve( response.ops.shift() )
+                } )
+            } )
             if ( insertedItem ) {
-                const updatedItem = await this.db.collection( this.collectionName ).findOneAndUpdate(
-                    { _id: insertedItem.insertedId },
-                    {
-                        $set: {
-                            id: insertedItem.insertedId.toString(),
-                        },
-                    },
-                    {
-                        projection: { _id: 0 },
-                        returnOriginal: false,
-                    },
+                await this.db.collection( this.collectionName ).updateOne(
+                    { _id: insertedItem._id },
+                    { $set: { id: insertedItem._id.toString() } }
                 )
-                return updatedItem.value
+                return { ...insertedItem, id: insertedItem._id.toString() }
             }
         } catch ( error ) {
             this.handleMongoDbError( error )
@@ -91,16 +88,14 @@ export class MongodbDataSource extends MongodbData implements DataSource {
     // ToOneRelation
     public async updateOneRelation( id: string, foreignKey: string, foreignId: string ): Promise<any> {
         // remove oldOwner foreignKey
-        await this.db.collection( this.collectionName ).findOneAndUpdate(
+        await this.db.collection( this.collectionName ).updateOne(
             { [foreignKey]: foreignId },
             { $unset: { [foreignKey]: '' } },
         )
-
         // add foreignKey to  newOwner
-        await this.db.collection( this.collectionName ).findOneAndUpdate(
+        await this.db.collection( this.collectionName ).updateOne(
             { id },
             { $set: { [foreignKey]: foreignId } },
-            { returnOriginal: false },
         )
     }
 

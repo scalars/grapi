@@ -82,7 +82,7 @@ export class Grapi {
         this.createServerConfig()
     }
 
-    public createServerConfig() {
+    private createServerConfig() {
         const ifSkipPrint = get( this, 'skipPrint', false )
         if ( !ifSkipPrint ) {
             console.log( chalk.magenta( `Starting Grapi...\n` ) )
