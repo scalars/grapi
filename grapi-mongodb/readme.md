@@ -39,6 +39,7 @@ type Vehicle @Model( dataSource: "datasource", key: "Vehicle" ) {
 ```
 
 ```typescript
+// server.ts
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { MongodbDataSourceGroup } from '@scalars/grapi-mongodb'
