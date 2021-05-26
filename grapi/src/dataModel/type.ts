@@ -1,3 +1,9 @@
+export const enum FilterListObject {
+    SOME= 'some',
+    NONE = 'none',
+    EVERY = 'every'
+}
+
 export enum DirectiveModelAction {
     Create = `Create`,
     Read = `Read`,

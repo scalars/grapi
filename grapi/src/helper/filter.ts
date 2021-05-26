@@ -1,5 +1,6 @@
 import { Operator, Where, WhereOperator } from '..'
 import { RelationShip, RelationType } from '../dataModel/relation/types'
+import { FilterListObject } from '../dataModel/type'
 import { eq, filter as fpFilter, flow, gt, gte, lt, lte, placeholder } from '../lodash'
 import { forEach, get, has, isEmpty, keys, omit, transform } from '../lodash'
 
@@ -24,6 +25,7 @@ const createFilterFromOperator = ( value, op ): any => {
 
 export interface RelationWhereConfig {
     foreignKey: string;
+    filter: FilterListObject,
     source: string;
     target: string;
     ship: RelationShip;

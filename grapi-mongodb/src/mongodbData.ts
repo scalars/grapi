@@ -1,6 +1,7 @@
 import {
     ArrayOperator,
-    filter, getRelationItemKeyId,
+    filter,
+    getRelationItemKeyId,
     iterateBaseFilter,
     iterateRelationsWhere,
     iterateWhere,
@@ -14,6 +15,7 @@ import {
     Where,
     WhereOperator
 } from '@scalars/grapi'
+import { FilterListObject } from '@scalars/grapi/lib/dataModel/type'
 import { Db, FilterQuery } from 'mongodb'
 
 import {
@@ -101,27 +103,59 @@ export class MongodbData {
                 forEach( relationWhere.filters, ( value: RelationWhere, key: string ) => {
                     if ( value.relation ) { relations[ key ] = value }
                 } )
-                if ( relationWhere.relation.list ) {
+                const {
+                    relation: {
+                        list, ship, source, target, filter, foreignKey
+                    },
+                    filters, targetKey
+                } = relationWhere
+                if ( list ) {
                     let relationData: any[]
-                    if ( relationWhere.relation.ship === RelationShip.ManyToMany ) {
+                    const isManyToMany = ship === RelationShip.ManyToMany
+                    const foreignKeyValue = foreignKey || `${toLower( source )}Id`
+                    if ( isManyToMany ) {
                         relationData = await this.filterManyFromManyRelation(
-                            toLower( relation.source ),
-                            toLower( relation.target ),
+                            toLower( source ),
+                            toLower( target ),
                             item.id,
-                            relationWhere.targetKey,
-                            iterateBaseFilter( relationWhere.filters )
+                            targetKey,
+                            iterateBaseFilter( filters )
                         )
                         relationData = compact( relationData )
                     } else {
-                        const foreignKey = relation.foreignKey || `${toLower( relation.source )}Id`
                         relationData = await this.findManyRelation(
-                            foreignKey,
+                            foreignKeyValue,
                             item.id,
-                            relationWhere.targetKey,
-                            relationWhere.filters
+                            targetKey,
+                            filters
                         )
                     }
-                    const filterWhere = isEmpty( relationData ) === false
+                    let filterWhere: boolean = false
+                    if ( filter === FilterListObject.SOME ) {
+                        filterWhere = ! isEmpty( relationData )
+                    } else if ( filter === FilterListObject.NONE ) {
+                        filterWhere = isEmpty( relationData )
+                    } else {
+                        let totalRelationData = []
+                        if ( isManyToMany ) {
+                            totalRelationData = await this.filterManyFromManyRelation(
+                                toLower( source ),
+                                toLower( target ),
+                                item.id,
+                                targetKey,
+                                {}
+                            )
+                        } else {
+                            totalRelationData = await this.findManyRelation(
+                                foreignKeyValue,
+                                item.id,
+                                targetKey,
+                                filters
+                            )
+                        }
+                        filterWhere = totalRelationData.length === relationData.length
+                    }
+
                     if ( filterWhere && isEmpty( relations ) === false ) {
                         const recursive: Array<any> = await  this.executeRelationFilters( relations, relationData )
                         return isEmpty( recursive ) === false

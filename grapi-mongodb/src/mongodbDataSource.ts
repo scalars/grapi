@@ -8,7 +8,7 @@ import {
     PaginatedResponse,
     Where
 } from '@scalars/grapi'
-import { Db, MongoError, ObjectId } from 'mongodb'
+import { Db, ObjectId } from 'mongodb'
 
 import { first, get, isEmpty } from './lodash'
 import { MongodbData } from './mongodbData'
@@ -42,12 +42,8 @@ export class MongodbDataSource extends MongodbData implements DataSource {
     public async create( mutation: Mutation ): Promise<any> {
         const payload = this.transformMutation( mutation )
         try {
-            const insertedItem: { _id: ObjectId, id: string } = await new Promise( ( resolve, reject ) => {
-                this.db.collection( this.collectionName ).insertOne( payload, ( error: MongoError, response ) => {
-                    if ( error ) { reject( error ) }
-                    resolve( response.ops.shift() )
-                } )
-            } )
+            const insertResult = await this.db.collection( this.collectionName ).insertOne( payload )
+            const insertedItem: { _id: ObjectId, id: string } = ( insertResult.ops || [] ).shift()
             if ( insertedItem ) {
                 await this.db.collection( this.collectionName ).updateOne(
                     { _id: insertedItem._id },
