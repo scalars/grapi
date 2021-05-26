@@ -55,15 +55,17 @@ export function testSuits(): void {
             'book': { 'name': 'Book From Carlos Doe' } } ) ).to.be.true
     } )
     it( 'Should filter AND Users username plus ManyToMany Group name', async () => {
-        const query: string = `query {
+        const query: string = `query ( $groups: FilterGroup ) {
             users(
                 where: {
                     username_contains: "Doe"
-                    groups: { name_contains: "Group Carlos Doe B" }
+                    groups: $groups
                 }
             ) ${ userData }
         }`
-        const { users } = await ( this as any ).graphqlRequest( query, {} )
+        let { users } = await ( this as any ).graphqlRequest( query, {
+            groups: { some: { name_contains: 'Group Carlos Doe B' } }
+        } )
         expect( users ).to.be.an( 'array' ).to.have.lengthOf( 1 )
         expect( users[0] ).to.include( {
             'username': 'Carlos Doe',
@@ -75,27 +77,81 @@ export function testSuits(): void {
             .to.include.deep.members( [ {
                 'name': 'Group Carlos Doe B'
             } ] )
+
+        const responseEvery = await ( this as any ).graphqlRequest( query, {
+            groups: { every: { name_in: [ 'Group Test', 'Group B From Jhon Doe' ] } }
+        } )
+        users = responseEvery.users
+        expect( users ).to.be.an( 'array' ).to.have.lengthOf( 1 )
+        expect( users[0] ).to.include( {
+            'username': 'Jhon Doe'
+        } )
+        expect( users[0].groups )
+            .to.be.an( 'array' )
+            .to.have.lengthOf( 2 )
+            .to.include.deep.members( [
+                {
+                    'name': 'Group B From Jhon Doe'
+                },
+                {
+                    'name': 'Group Test'
+                }
+            ] )
+
+        const responseNone = await ( this as any ).graphqlRequest( query, {
+            groups: { none: { name_contains: 'Group' } }
+        } )
+        users = responseNone.users
+        expect( users ).to.be.an( 'array' ).to.have.lengthOf( 0 )
     } )
 
     it( 'Should filter AND Groups name plus ManyToMay members to User username', async () => {
-        const query: string = `query {
+        const query: string = `query ( $members: FilterUser ) {
             groups(
                 where: {
                     name_contains: "Group"
-                    members: { username_contains: "Maria Doe" }
+                    members: $members
                 }
             ) { name members { username email } }
         }`
-        const { groups } = await ( this as any ).graphqlRequest( query, {} )
+        let { groups } = await ( this as any ).graphqlRequest( query, {
+            members: { some: { username_contains: 'Maria Doe' } }
+        } )
         expect( groups ).to.be.an( 'array' ).to.have.lengthOf( 2 )
         forEach( groups, ( group: any ) => {
             expect( some( group.members, { 'username': 'Maria Doe', 'email': 'maria@doe.com' } ) ).to.be.true
         } )
+
+        const responseNone = await ( this as any ).graphqlRequest( query, {
+            members: { none: { username_in: [ 'Jhon Doe', 'Carlos Doe' ] } }
+        } )
+        groups = responseNone.groups
+        expect( groups )
+            .to.be.an( 'array' )
+            .to.have.lengthOf( 1 )
+        expect( groups[0].members )
+            .to.be.an( 'array' )
+            .to.have.lengthOf( 1 )
+            .to.include.deep.members( [
+                {
+                    email: 'maria@doe.com',
+                    username: 'Maria Doe'
+                }
+            ] )
     } )
     it( 'Should filter AND Groups name plus ManyToMany members User - username - plus Book name', async () => {
         const query: string = `query {
-            groups( where: {
-                    name_contains: "Group" members: { username_contains: "Doe" book: { name: "Book A Maria Doe" } }
+            groups(
+                where: {
+                    name_contains: "Group" 
+                    members: {
+                        some: {
+                            username_contains: "Doe"
+                            book: {
+                                name: "Book A Maria Doe"
+                            }
+                        }
+                    }
                 }
             ) { name members ${userData} }
         }`
@@ -110,9 +166,11 @@ export function testSuits(): void {
                 groups( where: {
                 name_contains: "Doe"
                 members: {
-                    username_notcontains: "Carlos Doe"
-                    book: { name_contains: "Book" }
-                    team: { name: "Team Maria Doe" }
+                    some: {
+                        username_notcontains: "Carlos Doe"
+                        book: { name_contains: "Book" }
+                        team: { name: "Team Maria Doe" }
+                    }
                 }
             } ) { name members ${userData} }
         }`
@@ -131,7 +189,12 @@ export function testSuits(): void {
     it( 'Should filter AND Teams name plus biOneToMany players User - username', async() => {
         const query: string = `query {
             teams(
-                where: { name_notcontains: "test" players: { username_neq: "Maria Doe" } }
+                where: {
+                    name_notcontains: "test" 
+                    players: { 
+                        some: { username_neq: "Maria Doe" }
+                    }
+                }
             ) { name players ${userData} }
         }`
         const { teams } = await ( this as any ).graphqlRequest( query, {} )
@@ -148,7 +211,11 @@ export function testSuits(): void {
         const query: string = `query {
             teams( where: { 
                 name_contains: "team" 
-                players: { email_contains: "@" book: { name_notcontains: "Book From" } }
+                players: { 
+                    some: {
+                        email_contains: "@" book: { name_notcontains: "Book From" }
+                    }
+                }
             } ) { name players ${userData} }
         }`
         const { teams } = await ( this as any ).graphqlRequest( query, {} )
@@ -161,7 +228,17 @@ export function testSuits(): void {
         const query: string = `query {
             teams( where: {
                 name_contains: "team"
-                players: { email_contains: "@" book: { name_notcontains: "Book From" } groups: { name: "Group B From Jhon Doe" } }
+                players: { 
+                    some: {
+                        email_contains: "@" 
+                        book: { name_notcontains: "Book From" } 
+                        groups: {
+                            some: {
+                                name: "Group B From Jhon Doe"
+                            }
+                        }
+                    }
+                }
             } ) { name players ${userData} }
         }`
         const { teams } = await ( this as any ).graphqlRequest( query, {} )
@@ -174,9 +251,11 @@ export function testSuits(): void {
             teams( where: {
                 name: "Team Test Some"
                 players: {
-                    email: "jhon@doe.com"
-                    book: { name_notcontains: "Book From" }
-                    groups: { name: "Group B From Jhon Doe" }
+                    some: {
+                        email: "jhon@doe.com"
+                        book: { name_notcontains: "Book From" }
+                        groups: { some: { name: "Group B From Jhon Doe" } }
+                    }
                 }
             } ) { name players ${userData} }
         }`
@@ -221,7 +300,7 @@ export function testSuits(): void {
                 name_contains: "Book"
                 author: {
                     username_contains: "Doe"
-                    groups: { name: "Group B From Jhon Doe" }
+                    groups: { some: { name: "Group B From Jhon Doe" } }
                 }
             } ) { name author ${userData} }
         }`
@@ -244,7 +323,7 @@ export function testSuits(): void {
                 author: {
                     username_contains: "Doe"
                     team: { name_contains: "Doe" }
-                    groups: { name: "Group Carlos Doe A" }
+                    groups: { some: { name: "Group Carlos Doe A" } }
                 }
             } ) { name author ${userData} }
         }`
@@ -299,7 +378,10 @@ export function testSuits(): void {
     } )
     it( 'Should filter OR Users username plus ManyToMany Group name', async () => {
         const query: string = `query { users( where: {
-            OR: [ { email_notcontains: "@doe.com" } { groups: { name_eq: "Group A From Maria Doe" } } ]
+            OR: [ 
+                { email_notcontains: "@doe.com" }
+                { groups: { some: { name_eq: "Group A From Maria Doe" } } } 
+            ]
         } ) ${userData} }`
         const { users } = await ( this as any ).graphqlRequest( query, { } )
         expect( users ).to.be.an( 'array' ).to.have.lengthOf( 4 )
@@ -317,8 +399,8 @@ export function testSuits(): void {
         const query: string = `query { groups ( where: {
             OR: [
                 { name_eq: "Group A From Maria Doe" }
-                { members: { username_eq: "Maria Doe" } }
-                { members: { username_eq: "Jhon Doe" } }
+                { members: { some: { username_eq: "Maria Doe" } } }
+                { members: { some: { username_eq: "Jhon Doe" } } }
             ]
         } ) { name members ${userData} } }`
         const { groups } = await ( this as any ).graphqlRequest( query, { } )
@@ -337,8 +419,10 @@ export function testSuits(): void {
                 { name_eq: "Group A From Maria Doe" }
                 {
                     members: {
-                        username_in: ["Maria Doe", "Jhon Doe"]
-                        book: { name: "Book A Maria Doe" }
+                        some: {
+                            username_in: ["Maria Doe", "Jhon Doe"]
+                            book: { name: "Book A Maria Doe" }
+                        }
                     }
                 }
             ]

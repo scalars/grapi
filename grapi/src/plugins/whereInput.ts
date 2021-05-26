@@ -3,9 +3,10 @@ import { MODEL_DIRECTIVE, MODEL_DIRECTIVE_SOURCE_KEY } from '../constants'
 import { RelationField } from '../dataModel'
 import Field from '../dataModel/field'
 import Model from '../dataModel/model'
-import { DataModelType } from '../dataModel/type'
+import { DataModelType, FilterListObject } from '../dataModel/type'
 import { RelationWhereConfig } from '../helper'
-import { forEach, get, isEmpty, map, mapValues, reduce } from '../lodash'
+import { forEach, get, isEmpty, map, mapValues, reduce, size } from '../lodash'
+import RootNode from '../rootNode'
 import { inputDateTimeBetweenName, inputFloatBetweenName, inputIntBetweenName } from './constants'
 import { Context, Plugin } from './interface'
 import { parseRelationConfig } from './utils'
@@ -29,7 +30,7 @@ export default class WhereInputPlugin implements Plugin {
         const whereInput = `input ${modelWhereInputName} {
             OR: [${modelWhereInputName}!]
             AND: [${modelWhereInputName}!]
-            ${this.createWhereFilter( model.getFields() )}
+            ${this.createWhereFilter( root, model.getFields() )}
         }`
         root.addInput( whereInput )
 
@@ -37,7 +38,7 @@ export default class WhereInputPlugin implements Plugin {
         // only use the unique field
         const modelWhereUniqueInputName = this.getWhereUniqueInputName( model )
         const whereUniqueInput = `input ${modelWhereUniqueInputName} {
-            ${this.createWhereUniqueFilter( model.getName(), model.getFields() )}
+            ${ this.createWhereUniqueFilter( model.getName(), model.getFields() ) }
         }`
         root.addInput( whereUniqueInput )
     }
@@ -78,6 +79,21 @@ export default class WhereInputPlugin implements Plugin {
             if ( field && field.getType() === DataModelType.RELATION ) {
                 const relationTo: Model = field.getRelationTo()
                 const metadataField: Record<string, any> = parseRelationConfig( field.getRelationConfig( ) )
+                let filter: FilterListObject
+                if ( field.isList() ) {
+                    if ( size( value ) > 1 ) {
+                        throw new Error( `There can be only one input field named Filter${ field.getTypename() }` )
+                    }
+                    const { some, none, every } = value
+                    if ( some ) {
+                        filter = FilterListObject.SOME
+                    } else if ( none ) {
+                        filter = FilterListObject.NONE
+                    } else {
+                        filter = FilterListObject.EVERY
+                    }
+                    value = some || none || every
+                }
                 result[fieldName] = {
                     filters: this.parseWhereIterate( value, relationTo ),
                     sourceKey: get( model.getMetadata( MODEL_DIRECTIVE ), MODEL_DIRECTIVE_SOURCE_KEY ),
@@ -88,6 +104,7 @@ export default class WhereInputPlugin implements Plugin {
                         target: relationTo.getName(),
                         side: get( metadataField, `side` ),
                         list: field.isList(),
+                        filter,
                         ship: field.getRelation(),
                         type: field.getRelationType()
                     } as RelationWhereConfig
@@ -126,7 +143,7 @@ export default class WhereInputPlugin implements Plugin {
         return { fieldName, operator: validOperator }
     }
 
-    private createWhereFilter( fields: Record<string, Field> ): string {
+    private createWhereFilter( root: RootNode, fields: Record<string, Field> ): string {
         // create equals on scalar fields
         let inputFields: Array<{fieldName: string; type: string}> = []
         forEach( fields, ( field, name ) => {
@@ -163,13 +180,21 @@ export default class WhereInputPlugin implements Plugin {
                 inputFields.push( ...WhereInputPlugin.parseEqFilter( name, typeName ) )
                 break
             case DataModelType.CUSTOM_SCALAR:
-                inputFields = WhereInputPlugin.createWhereFilterCustomScalars( inputFields, field, name )
+                inputFields = WhereInputPlugin.createWhereFilterCustomScalars( inputFields, typeName, name )
                 break
             case DataModelType.RELATION:
-                inputFields.push( {
-                    fieldName: name,
-                    type: `${typeName}WhereInput`,
-                } )
+                if ( field.isList() ) {
+                    root.addInput( `input Filter${typeName} { some: ${typeName}WhereInput every: ${typeName}WhereInput none: ${typeName}WhereInput }` )
+                    inputFields.push( {
+                        fieldName: name,
+                        type: `Filter${typeName}`,
+                    } )
+                } else  {
+                    inputFields.push( {
+                        fieldName: name,
+                        type: `${typeName}WhereInput`,
+                    } )
+                }
                 break
             }
         } )
@@ -177,8 +202,7 @@ export default class WhereInputPlugin implements Plugin {
         return inputFields.map( ( { fieldName, type } ) => `${fieldName}: ${type}` ).join( ' ' )
     }
 
-    private static createWhereFilterCustomScalars ( inputFields:  Array<{fieldName: string; type: string}>, field: Field, name: string ): Array<{fieldName: string; type: string}> {
-        const typeName: string = field.getTypename()
+    private static createWhereFilterCustomScalars ( inputFields:  Array<{fieldName: string; type: string}>, typeName: string, name: string ): Array<{fieldName: string; type: string}> {
         switch ( typeName ) {
         case DataModelType.URL:
         case DataModelType.EMAIL:

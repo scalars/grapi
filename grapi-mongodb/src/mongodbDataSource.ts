@@ -8,7 +8,7 @@ import {
     PaginatedResponse,
     Where
 } from '@scalars/grapi'
-import { Db, MongoError, ObjectId } from 'mongodb'
+import { Db, ObjectId } from 'mongodb'
 
 import { first, get, isEmpty } from './lodash'
 import { MongodbData } from './mongodbData'
