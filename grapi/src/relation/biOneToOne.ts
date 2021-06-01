@@ -2,6 +2,7 @@ import { Operator } from '..'
 import { Model, RelationType } from '../dataModel'
 import { supportFindOneByRelation } from '../dataSource/utils'
 import { find, isEmpty, sortBy } from '../lodash'
+import { InputRecursiveRelation } from './index'
 import { Relation, WithForeignKey } from './interface'
 
 enum relationType {
@@ -124,9 +125,14 @@ export default class BiOneToOne implements Relation, WithForeignKey {
     }
 
     public async createAndSetForeignKeyOnOwningSide( targetData: Record<string, any>, context: any ) {
-        const mutation = this.refSideModel.getCreateMutationFactory().createMutation( targetData )
-        const created = await this.refSideModel.getDataSource().create( mutation, context )
-        return this.setForeignKeyOnOwningSide( created.id )
+        const execution = async ( data: Record<string, any> ) => {
+            const mutation = this.refSideModel.getCreateMutationFactory().createMutation( data )
+            const created = await this.refSideModel.getDataSource().create( mutation, context )
+            return { data: this.setForeignKeyOnOwningSide( created.id ), object: created }
+        }
+        const { rootData, createdData, executed } = await InputRecursiveRelation( targetData, this.refSideModel, context, execution )
+        if ( executed ) return executed.data
+        return ( await execution( { ...rootData, ...createdData } ) ).data
     }
 
     public unsetForeignKeyOnOwningSide() {
@@ -149,9 +155,14 @@ export default class BiOneToOne implements Relation, WithForeignKey {
     }
 
     public async createAndConnectOnRefSide( refSideId: string, data: Record<string, any>, context: any ) {
-        data[this.foreignKey] = refSideId
-        const mutation = this.owningSideModel.getCreateMutationFactory().createMutation( data )
-        await this.owningSideModel.getDataSource().create( mutation, context )
+        const execution = async ( dataRecord: Record<string, any> ) => {
+            const mutation = this.owningSideModel.getCreateMutationFactory().createMutation( {
+                ...dataRecord, [ this.foreignKey ]: refSideId
+            } )
+            return { object: await this.owningSideModel.getDataSource().create( mutation, context ) }
+        }
+        const { executed } = await InputRecursiveRelation( data, this.owningSideModel, context, execution )
+        if ( ! executed ) await execution( data )
     }
 
     public async disconnectOnRefSide( refSideId: string, context: any ) {

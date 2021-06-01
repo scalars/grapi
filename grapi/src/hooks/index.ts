@@ -30,7 +30,16 @@ const findUniqueObjectsOnModel = async ( connectData: any[], model: Model ): Pro
     return connectWhere
 }
 
+const relationForeignKey = ( metadata: Record<string, any>, foreignKey: Record<string, string> | string = '' ): string => {
+    foreignKey = get( metadata, 'foreignKey', '' )
+    if ( foreignKey && typeof foreignKey !== 'string' ) {
+        foreignKey = foreignKey.key || ''
+    }
+    return foreignKey as string
+}
+
 export {
     findUniqueObjectOnModel,
-    findUniqueObjectsOnModel
+    findUniqueObjectsOnModel,
+    relationForeignKey
 }

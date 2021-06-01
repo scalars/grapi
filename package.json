@@ -9,7 +9,7 @@
     "compile": "yarn tsc --build tsconfig.build.json",
     "clean": "lerna run clean --stream --parallel",
     "build": "lerna run build --stream --parallel",
-    "lint": "yarn eslint",
+    "lint": "yarn eslint --ext .ts .",
     "test": "lerna run test --stream --scope @scalars/grapi",
     "test:scope": "lerna run test --stream --parallel --scope $SCOPE -- --colors",
     "test:grep": "lerna run test:grep --stream --parallel --scope $SCOPE -- $FILE --colors ",

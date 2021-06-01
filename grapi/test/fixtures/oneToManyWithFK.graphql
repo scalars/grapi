@@ -20,6 +20,10 @@ type AuthorRelation implements Relation
     name: "Author"
     foreignKey: "theAuthor"
   )
+type BooksFromEditorial implements Relation @config(
+    name: "BooksFromEditorial"
+    foreignKey: "editorial_book_id"
+)
 
 type User @Model(dataSource: "memory", key: "users") {
   id: ID! @unique @autoGen
@@ -36,8 +40,15 @@ type User @Model(dataSource: "memory", key: "users") {
 type Book @Model(dataSource: "memory", key: "books") {
   id: ID! @unique @autoGen
   name: String
+  editorial: Editorial @relation(with: BooksFromEditorial)
   # bi-one-to-* relation
   author: User @relation(with: AuthorRelation)
+}
+
+type Editorial @Model(dataSource: "memory", key: "editorials") {
+  id: ID! @unique @autoGen
+  name: String
+  books: [Book!]! @relation(with: BooksFromEditorial)
 }
 
 type Team @Model(dataSource: "memory", key: "teams") {

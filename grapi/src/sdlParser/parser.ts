@@ -6,7 +6,7 @@ import {
     ObjectTypeDefinitionNode,
     parse,
     print,
-    visit 
+    visit
 } from 'graphql'
 
 import { get, reduce, values } from '../lodash'
@@ -60,6 +60,7 @@ export class SdlParser {
         const documentAST = parse( sdl )
         // construct SdlObjectType with SdlFields
         visit( documentAST, {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             enter: ( node, key: string, parent, path ) => {
                 // Is directive definition
                 if ( node.kind === Kind.DIRECTIVE_DEFINITION ) {

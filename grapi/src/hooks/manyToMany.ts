@@ -18,7 +18,13 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
 
     // A side
     const createForModelA = ( sourceId: string, records: any[], context: any ): Promise<void[]> => {
-        return Promise.all( records.map( record => relationImpl.createAndAddIdForModelA( { modelAId: sourceId, modelBData: record }, context ) ) )
+        return Promise.all(
+            records.map( async record =>
+                await relationImpl.createAndAddIdForModelA(
+                    { modelAId: sourceId, modelBData: record }, context
+                )
+            )
+        )
     }
 
     const connectForModelA = ( sourceId: string, ids: string[], context: any ): Promise<void[]> => {
@@ -31,14 +37,24 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
     }
 
     const destroyForModelA = ( sourceId: string, ids: string[], context: any ): Promise<void[]> => {
-        return Promise.all( ids.map( id =>
-            relationImpl.deleteAndRemoveIdFromModelB( { modelAId: sourceId, modelBId: id }, context ) ) )
+        return Promise.all(
+            ids.map( async id =>
+                await relationImpl.deleteAndRemoveIdFromModelB(
+                    { modelAId: sourceId, modelBId: id }, context
+                )
+            )
+        )
     }
 
     // B side
     const createForModelB = ( sourceId: string, records: any[], context: any ): Promise<void[]> => {
-        return Promise.all( records.map( record =>
-            relationImpl.createAndAddIdForModelB( { modelBId: sourceId, modelAData: record }, context ) ) )
+        return Promise.all(
+            records.map( async record =>
+                await relationImpl.createAndAddIdForModelB(
+                    { modelBId: sourceId, modelAData: record }, context
+                )
+            )
+        )
     }
 
     const connectForModelB = ( sourceId: string, ids: string[], context: any ): Promise<void[]> => {
