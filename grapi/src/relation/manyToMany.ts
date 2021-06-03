@@ -1,14 +1,15 @@
 import { Operator } from '..'
 import { Model, RelationType } from '../dataModel'
 import { isEmpty, isNil } from '../lodash'
+import { InputRecursiveRelation } from './index'
 import { Relation } from './interface'
 
 // many-to-many
 export default class ManyToMany implements Relation {
-    private modelA: Model;
-    private modelB: Model;
-    private modelAField: string;
-    private modelBField: string;
+    private readonly modelA: Model;
+    private readonly modelB: Model;
+    private readonly modelAField: string;
+    private readonly modelBField: string;
 
     constructor( {
         modelA,
@@ -65,17 +66,36 @@ export default class ManyToMany implements Relation {
         )
     }
 
-    public async createAndAddIdForModelA( { modelAId, modelBData }: { modelAId: string; modelBData: Record<string, any> }, context: any ): Promise<void> {
-        const mutation = this.modelB.getCreateMutationFactory().createMutation( modelBData )
-        const record = await this.modelB.getDataSource().create( mutation )
-        return await this.addId( { modelAId, modelBId: record.id }, context )
+    private async createAndAddIdFromRefSide (
+        model: Model,
+        modelData: any,
+        refData: { modelAId?: string, modelBId?: string },
+        context: any
+    ) {
+        let record: Record<string, any>
+        const { modelAId, modelBId } = refData
+        const execution = async ( data: Record<string, unknown> ) => {
+            const mutation = model.getCreateMutationFactory().createMutation( data )
+            return { object: await model.getDataSource().create( mutation ) }
+        }
+        const { rootData, createdData, executed } = await InputRecursiveRelation( modelData, model, context, execution )
+        if ( executed ) record = executed.object
+        else record = ( await execution( { ...rootData, ...createdData } ) ).object
+        return await this.addId(
+            { modelAId: modelAId || record.id, modelBId: modelBId || record.id }, context
+        )
+    }
+
+    public async createAndAddIdForModelA(
+        { modelAId, modelBData }: { modelAId: string; modelBData: Record<string, any> }, context: any
+    ): Promise<void> {
+        return await this.createAndAddIdFromRefSide( this.modelB, modelBData, { modelAId }, context )
     }
 
     public async createAndAddIdForModelB(
-        { modelBId, modelAData }: {modelBId: string; modelAData: Record<string, any>}, context: any ) {
-        const mutation = this.modelA.getCreateMutationFactory().createMutation( modelAData )
-        const record = await this.modelA.getDataSource().create( mutation )
-        return this.addId( { modelBId, modelAId: record.id }, context )
+        { modelBId, modelAData }: {modelBId: string; modelAData: Record<string, any>}, context: any
+    ): Promise<any> {
+        return await this.createAndAddIdFromRefSide( this.modelA, modelAData, { modelBId }, context )
     }
 
     public async removeId( { modelAId, modelBId }: {modelAId: string; modelBId: string}, context: any ) {

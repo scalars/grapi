@@ -28,7 +28,7 @@ export enum DataModelType {
 
     // Custom type
     CUSTOM_SCALAR = 'CUSTOM_SCALAR',
-    JSON = 'JSON',
+    JSON = 'Json',
     EMAIL = 'Email',
     URL = 'Url',
     DATE_TIME = 'DateTime',

@@ -13,6 +13,7 @@ const userFields = `
   married
   website
   email
+  skills
 `
 
 export const sdl = readFileSync( path.resolve( __dirname, '../fixtures/filters.graphql' ), { encoding: 'utf8' } )
@@ -277,6 +278,26 @@ export function testSuits() {
         expect( some( res.users, { name: 'Michela Battaglia' } ) ).to.be.true
         expect( some( res.users, { name: 'Wout Beckers' } ) ).to.be.true
         expect( some( res.users, { name: 'Ben Bohm' } ) ).to.be.true
+    } )
+
+    it( `JSON: Should pass 'json' filter`, async (  ) => {
+        const getUsersMarriedEq = `
+        query ($where: UserWhereInput!) {
+          users( where: $where) { ${userFields} }
+        }`
+        let getUsersMarriedEqVariables: any = {
+            where: { skills_object: { $elemMatch:{ code: { $in:[ 'S03', 'S05' ] } } } }
+        }
+        let res = await ( this as any ).graphqlRequest( getUsersMarriedEq, getUsersMarriedEqVariables )
+        expect( res.users ).with.lengthOf( 2 )
+        expect( res.users[0] ).to.deep.includes( { name: 'Wout Beckers' } )
+
+        getUsersMarriedEqVariables = {
+            where: { skills_object: { $elemMatch: { name: { $regex: '.*Data.*' } } } }
+        }
+        res = await ( this as any ).graphqlRequest( getUsersMarriedEq, getUsersMarriedEqVariables )
+        expect( res.users ).with.lengthOf( 1 )
+        expect( res.users[0] ).to.deep.includes( { name: 'Ben Bohm' } )
     } )
 
     // TODO: DateTime filters tests

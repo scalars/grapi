@@ -1,7 +1,7 @@
 import { ModelRelation } from '../dataModel'
 import { get, omit } from '../lodash'
 import { OneToManyRelation } from '../relation'
-import { findUniqueObjectOnModel, findUniqueObjectsOnModel } from './index'
+import { findUniqueObjectOnModel, findUniqueObjectsOnModel, relationForeignKey } from './index'
 import { Hook } from './interface'
 
 export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> => {
@@ -10,7 +10,7 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
         manySideModel: relation.target,
         oneSideField: relation.sourceField,
         manySideField: relation.targetField,
-        foreignKey: get( relation.metadata, 'foreignKey' ),
+        foreignKey: relationForeignKey( relation.metadata ),
     } )
 
     // fields
@@ -19,7 +19,9 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
 
     // operations
     const create = ( sourceId: string, records: any[], context: any ): Promise<void[]> => {
-        return Promise.all( records.map( record => relationImpl.createAndAddFromOneSide( sourceId, record, context ) ) )
+        return Promise.all( records.map( async record =>
+            await relationImpl.createAndAddFromOneSide( sourceId, record, context ) )
+        )
     }
 
     const connect = ( sourceId: string, ids: string[], context: any ): Promise<void[]> => {

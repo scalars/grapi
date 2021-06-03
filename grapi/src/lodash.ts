@@ -21,6 +21,7 @@ import takeRightWhile from 'lodash/fp/takeRightWhile'
 import takeWhile from 'lodash/fp/takeWhile'
 import get from 'lodash/get'
 import has from 'lodash/has'
+import intersection from 'lodash/intersection'
 import isEmpty from 'lodash/isEmpty'
 import isFunction from 'lodash/isFunction'
 import isNil from 'lodash/isNil'
@@ -58,6 +59,7 @@ export {
     gt,
     gte,
     has,
+    intersection,
     isEmpty,
     isFunction,
     isNil,

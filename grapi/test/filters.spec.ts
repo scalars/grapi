@@ -18,7 +18,11 @@ const data = [
         'weight': 87.2,
         'married': false,
         'website': 'http://bennet.com',
-        'email': 'ben@correo.com'
+        'email': 'ben@correo.com',
+        'skills': [
+            { 'code': 'S00', 'name': 'Software Grafico' },
+            { 'code': 'S01', 'name': 'Gig Data' },
+        ]
     },
     {
         'name': 'Wout Beckers',
@@ -26,7 +30,11 @@ const data = [
         'weight': 75.0,
         'married': true,
         'website': 'http://woutnet.com',
-        'email': 'wout@correo.com'
+        'email': 'wout@correo.com',
+        'skills': [
+            { 'code': 'S02', 'name': 'Fintech' },
+            { 'code': 'S03', 'name': 'Ecommerce' },
+        ]
     },
     {
         'name': 'Michela Battaglia',
@@ -34,7 +42,11 @@ const data = [
         'weight': 63.8,
         'married': true,
         'website': 'http://michelanet.com.co/index.html',
-        'email': 'michela@correo.com.co'
+        'email': 'michela@correo.com.co',
+        'skills': [
+            { 'code': 'S00', 'name': 'Software Grafico' },
+            { 'code': 'S05', 'name': 'Arquitectura de Software' }
+        ]
     }
 ]
 

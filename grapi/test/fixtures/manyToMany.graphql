@@ -15,6 +15,13 @@ type Note {
   text: String
 }
 
+type Comment @Model(dataSource: "memory", key: "comments"){
+    id: ID! @unique @autoGen
+    text: String
+}
+
+type Membership implements Relation @config( name: "Membership" )
+
 type User @Model(dataSource: "memory", key: "users") {
   id: ID! @unique @autoGen
   username: String!
@@ -24,12 +31,18 @@ type User @Model(dataSource: "memory", key: "users") {
   location: Location
   note: [Note!]!
   # bi-*-to-* relation
-  groups: [Group!]! @relation(name: "Membership")
+  groups: [Group!]! @relation(with: Membership)
 }
+
+type CommentsFromGroup implements Relation @config(
+    name: "CommentsFromGroup"
+    foreignKey: { key: "group_comment_id" }
+)
 
 type Group @Model(dataSource: "memory", key: "groups") {
   id: ID! @unique @autoGen
   name: String
+  comments: [Comment!] @relation(with: CommentsFromGroup)
   # bi-*-to-* relation
-  members: [User!]! @relation(name: "Membership")
+  members: [User!]! @relation(with: Membership)
 }

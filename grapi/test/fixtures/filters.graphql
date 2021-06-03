@@ -1,6 +1,7 @@
 scalar Url
 scalar Email
 scalar DateTime
+scalar Json
 
 enum STATUS {
     OK
@@ -15,4 +16,5 @@ type users @Model(dataSource: "memory", key: "users_filters"){
     married: Boolean
     website: Url
     email: Email
+    skills: Json
 }

@@ -252,7 +252,7 @@ export class MongodbData {
     }
 
     public whereToFilterQuery( where: Where, operator: Operator = undefined ): FilterQuery<any> {
-        const filterQuery: object = {}
+        const filterQuery: Record<string, unknown> = {}
         const whereCallback = ( field: string, operator: Operator, value: any ): void => {
             switch ( operator ) {
             case Operator.eq:
@@ -284,6 +284,9 @@ export class MongodbData {
                 break
             case Operator.between:
                 filterQuery[field] = { $gte: value.from, $lte: value.to }
+                break
+            case Operator.object:
+                filterQuery[field] = value
                 break
             }
         }

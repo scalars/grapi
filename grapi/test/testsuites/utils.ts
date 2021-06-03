@@ -47,7 +47,7 @@ export const createApp = ( { sdl, dataSources, scalars, }: {
     }
 }
 
-export const createGrapiApp = (sdl: string, dataSources: Record<string, any> ): any => {
+export const createGrapiApp = ( sdl: string, dataSources: Record<string, any> ): any => {
     const { graphqlRequest, close } = createApp( {
         sdl,
         dataSources,

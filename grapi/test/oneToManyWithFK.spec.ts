@@ -6,7 +6,7 @@ import chaiHttp = require( 'chai-http' );
 chai.use( chaiHttp )
 import { MongodbDataSourceGroup } from '@scalars/grapi-mongodb'
 
-import { sdl, testSuits } from './testsuites/oneToManyWithFK'
+import { sdl, testSuits, testSuitsWithFK } from './testsuites/oneToManyWithFK'
 import { createGrapiApp, prepareConfig } from './testsuites/utils'
 
 const { mongoUri } = prepareConfig()
@@ -39,4 +39,5 @@ describe( 'Tests on fixtures/oneToManyWithFK.graphql with MongoDB Data Source', 
     } )
 
     testSuits.call( this )
+    testSuitsWithFK.call( this )
 } )

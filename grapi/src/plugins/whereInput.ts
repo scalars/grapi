@@ -216,6 +216,9 @@ export default class WhereInputPlugin implements Plugin {
                 fieldName: `${name}_between`, type: inputDateTimeBetweenName,
             } )
             break
+        case DataModelType.JSON:
+            inputFields.push( ...WhereInputPlugin.parseObjectFilter( name, typeName ) )
+            break
         }
         return inputFields
     }
@@ -261,4 +264,11 @@ export default class WhereInputPlugin implements Plugin {
             { fieldName: `${name}_in`, type: `[ ${type} ]` }
         ]
     }
+
+    private static parseObjectFilter ( name: string, type: string ): Array<{ fieldName: string; type: string }> {
+        return [
+            { fieldName: `${name}_object`, type }
+        ]
+    }
+
 }
