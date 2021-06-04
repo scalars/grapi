@@ -285,6 +285,9 @@ export class MongodbData {
             case Operator.between:
                 filterQuery[field] = { $gte: value.from, $lte: value.to }
                 break
+            case Operator.object:
+                filterQuery[field] = value
+                break
             }
         }
         if ( isEmpty( where ) === false && ( operator === Operator.or || operator === Operator.and ) ) {
