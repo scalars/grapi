@@ -12,6 +12,7 @@
     "parserOptions": {
         "project": "./tsconfig.json"
     },
+    "ignorePatterns": ["lib", "node_modules", "types.d.ts", "index.d.ts"],
     "root": true,
     "rules": {
         "simple-import-sort/imports": "error",

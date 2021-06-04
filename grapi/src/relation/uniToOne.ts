@@ -1,6 +1,7 @@
 import { Operator } from '..'
 import { Model, RelationType } from '../dataModel'
 import { isEmpty } from '../lodash'
+import { InputRecursiveRelation } from './index'
 import { Relation, WithForeignKey } from './interface'
 
 // utils
@@ -54,9 +55,14 @@ export default class UniToOne implements Relation, WithForeignKey {
     }
 
     public async createAndSetForeignKey( targetData: Record<string, any>, context: any ): Promise<{ [x: string]: any }> {
-        const mutation = this.targetModel.getCreateMutationFactory().createMutation( targetData )
-        const created = await this.targetModel.getDataSource().create( mutation, context )
-        return this.setForeignKey( created.id )
+        const execution = async ( data: Record<string, any> ) => {
+            const mutation = this.targetModel.getCreateMutationFactory().createMutation( data )
+            const created = await this.targetModel.getDataSource().create( mutation, context )
+            return { object: created, data: this.setForeignKey( created.id ) }
+        }
+        const { rootData, createdData, executed } = await InputRecursiveRelation( targetData, this.targetModel, context, execution )
+        if ( executed ) return executed.data
+        return ( await execution( { ...rootData, ...createdData } ) ).data
     }
 
     public async destroyAndUnsetForeignKey( data: Record<string, any>, context: any ): Promise<{ [x: string]: any } > {

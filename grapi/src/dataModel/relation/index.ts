@@ -67,7 +67,7 @@ export const createRelation = ( models: Model[] ): ModelRelation[] => {
 
     // construct relation map first
     // if relation name is given, pick them out
-    const relationsWithName: Record<string, {sourceSide: RelationTableField; targetSide?: RelationTableField}> = {}
+    const relationsWithName: Record<string, { sourceSide: RelationTableField; targetSide?: RelationTableField }> = {}
     models.forEach( model => {
         relationTable[model.getName()] = {}
         forEach( model.getFields(), ( field, fieldName ) => {
@@ -119,7 +119,7 @@ export const createRelation = ( models: Model[] ): ModelRelation[] => {
         const targetField: RelationField = get( targetSide, `field` ) as RelationField
 
         // uni-directional
-        if ( !targetSide ) {
+        if ( ! targetSide ) {
             configRelationField( sourceField,
                 ( sourceSide.type === toRelation.one ) ? RelationType.uniOneToOne : RelationType.uniOneToMany,
                 ( sourceSide.type === toRelation.one ) ? RelationShip.OneToOne : RelationShip.OneToMany
@@ -141,27 +141,37 @@ export const createRelation = ( models: Model[] ): ModelRelation[] => {
 
         // bi-directional
         const relationConfig: Record<string, any> = sourceField.getRelationConfig()
+        const relationFields: { relation?: RelationShip, type?: RelationType } = {}
         if ( sourceSide.type === toRelation.one && targetSide.type === toRelation.one ) {
-            configRelationFields( sourceField, targetField, RelationShip.OneToOne, RelationShip.OneToOne, RelationType.biOneToOne )
+            relationFields.relation = RelationShip.OneToOne; relationFields.type = RelationType.biOneToOne
             relation = configRelation( sourceSide, targetSide, relationConfig, name, RelationType.biOneToOne )
         } else if ( sourceSide.type === toRelation.one && targetSide.type === toRelation.many ) {
+            relationFields.relation = RelationShip.OneToMany; relationFields.type = RelationType.biOneToMany
             relation = configModelRelation(
                 sourceSide.targetModel, targetSide.targetModel,
                 targetSide.fieldName, sourceSide.fieldName,
                 RelationType.biOneToMany, relationConfig, name
             )
         } else if ( sourceSide.type === toRelation.many && targetSide.type === toRelation.one ) {
+            relationFields.relation = RelationShip.OneToMany; relationFields.type = RelationType.biOneToMany
             relation = configModelRelation(
                 sourceSide.sourceModel, targetSide.sourceModel,
                 sourceSide.fieldName, targetSide.fieldName,
                 RelationType.biOneToMany, relationConfig, name
             )
         } else if ( sourceSide.type === toRelation.many && targetSide.type === toRelation.many ) {
-            configRelationFields( sourceField, targetField, RelationShip.ManyToMany, RelationShip.ManyToMany, RelationType.biManyToMany )
+            relationFields.relation = RelationShip.ManyToMany; relationFields.type = RelationType.biManyToMany
             relation = configRelation( sourceSide, targetSide, relationConfig, name, RelationType.biManyToMany )
         } else {
             throw new Error( `unknown relation type from ${sourceSide.type} to ${targetSide.type}` )
         }
+        configRelationFields(
+            sourceField,
+            targetField,
+            relationFields.relation,
+            relationFields.relation,
+            relationFields.type
+        )
         modelRelations.push( relation )
     } )
 
@@ -182,7 +192,7 @@ export const createRelation = ( models: Model[] ): ModelRelation[] => {
 
                 // if no relation from otherside, or more than one relation
                 // we make it uni-directional
-                if ( !otherSideFields || size( otherSideFields ) > 1 ) {
+                if ( ! otherSideFields || size( otherSideFields ) > 1 ) {
                     relationConfig = {
                         type: ( type === toRelation.one ) ? RelationType.uniOneToOne : RelationType.uniOneToMany,
                         source: fromModel,

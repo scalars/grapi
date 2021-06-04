@@ -36,8 +36,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@scalars/grapi": "^2.0.19",
-    "mongodb": "^3.6.6",
-    "mongodb-client-encryption": "^1.2.3"
+    "mongodb": "^3.6.6"
   },
   "publishConfig": {
     "access": "public"

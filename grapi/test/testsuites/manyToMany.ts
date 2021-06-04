@@ -54,6 +54,15 @@ const groupWithUserFields = `
   }
 `
 
+const groupWithCommentsFields = `
+  id
+  name
+  comments{
+    id
+    text
+  }
+`
+
 const fakeUserData = ( data?: any ) => {
     return {
         username: faker.internet.userName(),
@@ -736,6 +745,74 @@ export function testSuits() {
         const { user } = await ( this as any ).graphqlRequest( getUserQuery, getUserVariable )
         // tslint:disable-next-line:no-unused-expression
         expect( user.groups ).to.be.an( 'array' ).that.is.empty
+    } )
+
+    it( 'should create recursive items with bi-*-to-* from one side', async () => {
+        // create recursive user, group and comments
+        const createGroupVariables = {
+            groups: {
+                create: {
+                    name: faker.internet.userName(),
+                    comments: { create: { text: faker.lorem.sentence( 100 ) } }
+                }
+            }
+        }
+        const createUserVariables = {
+            data: wrapSetToArrayField( fakeUserData( createGroupVariables ) ),
+        }
+        const createUserQuery = `
+          mutation ($data: UserCreateInput!) {
+            createUser (data: $data) { ${userFields} groups{${groupWithCommentsFields} } }
+          }
+        `
+        const { createUser } = await ( this as any ).graphqlRequest( createUserQuery, createUserVariables )
+
+        const group = createUser.groups[0]
+        const comment = group.comments[0]
+
+        expect( createUser ).to.have.property( 'id' )
+        expect( createUser.groups ).with.lengthOf( 1 )
+        expect( group.comments ).with.lengthOf( 1 )
+        expect( group ).to.have.property( 'id' )
+        expect( comment ).to.have.property( 'id' )
+    } )
+
+    it( 'should create and connect recursive items with bi-*-to-* from one side', async () => {
+        // Create comment
+        const createCommentVariables = {
+            data: { text: faker.lorem.sentence( 100 ) }
+        }
+        const createCommentQuery = `
+          mutation ($data: CommentCreateInput!) {
+            createComment (data: $data) { id text }
+          }
+        `
+        const { createComment } = await ( this as any ).graphqlRequest( createCommentQuery, createCommentVariables )
+        expect( createComment ).to.have.property( 'id' )
+
+        // create recursive user, group and comments
+        const createGroupVariables = {
+            groups: {
+                create: {
+                    name: faker.internet.userName(),
+                    comments: { connect: { id: createComment.id } }
+                }
+            }
+        }
+        const createUserVariables = {
+            data: wrapSetToArrayField( fakeUserData( createGroupVariables ) ),
+        }
+        const createUserQuery = `
+          mutation ($data: UserCreateInput!) {
+            createUser (data: $data) { ${userFields} groups{${groupWithCommentsFields} } }
+          }
+        `
+        const { createUser } = await ( this as any ).graphqlRequest( createUserQuery, createUserVariables )
+        expect( createUser ).to.have.property( 'id' )
+        expect( createUser.groups ).with.lengthOf( 1 )
+        expect( createUser.groups[0] ).to.have.property( 'id' )
+        expect( createUser.groups[0].comments ).with.lengthOf( 1 )
+        expect( createUser.groups[0].comments[0] ).to.deep.include( { id: createComment.id } )
     } )
 
     it( 'should disconnect unconnected item with bi-*-to-* from one side' )

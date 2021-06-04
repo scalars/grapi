@@ -1,6 +1,7 @@
 import { Operator } from '..'
 import { Model, RelationType } from '../dataModel'
 import { isEmpty } from '../lodash'
+import { InputRecursiveRelation } from './index'
 import { Relation, WithForeignKey } from './interface'
 
 const createForeignKey = ( model: Model ): string => `${model.getNamings().singular}Id`
@@ -65,9 +66,16 @@ export default class OneToMany implements Relation, WithForeignKey {
     }
 
     public async createAndSetForeignKeyOnManySide( targetData: Record<string, any>, context: any ): Promise<{ [x: string]: string }> {
-        const mutation = this.oneSideModel.getCreateMutationFactory().createMutation( targetData )
-        const created = await this.oneSideModel.getDataSource().create( mutation, context )
-        return this.setForeignKeyOnManySide( created.id )
+        const execution = async ( data: Record<string, any> ): Promise< { data: Record<string, any>, object: Record<string, any> } > => {
+            const mutation = this.oneSideModel.getCreateMutationFactory().createMutation( data )
+            const created = await this.oneSideModel.getDataSource().create( mutation, context )
+            return { data: this.setForeignKeyOnManySide( created.id ), object: created }
+        }
+        const { rootData, createdData, executed } = await InputRecursiveRelation(
+            targetData, this.oneSideModel, context, execution
+        )
+        if ( ! executed ) return ( await execution( { ...rootData, ...createdData } ) ).data
+        return ( executed.data )
     }
 
     public unsetForeignKeyOnManySide(): { [x: string]: string } {
@@ -89,9 +97,17 @@ export default class OneToMany implements Relation, WithForeignKey {
     }
 
     public async createAndAddFromOneSide( oneSideId: string, manySideData: any, context: any ): Promise<void> {
-        manySideData[this.foreignKey] = oneSideId
-        const mutation = this.manySideModel.getCreateMutationFactory().createMutation( manySideData )
-        await this.manySideModel.getDataSource().create( mutation, context )
+        const { rootData, createdData } = await InputRecursiveRelation(
+            { ...manySideData, [ this.foreignKey ]: oneSideId },
+            this.manySideModel,
+            context
+        )
+        const mutation = await this.manySideModel
+            .getCreateMutationFactory()
+            .createMutation( { ...rootData, ...createdData } )
+        await this.manySideModel
+            .getDataSource()
+            .create( mutation, context )
     }
 
     public async removeIdFromOneSide( oneSideId: string, manySideId: string, context: any ): Promise<void> {
