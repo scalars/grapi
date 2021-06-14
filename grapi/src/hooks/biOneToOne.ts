@@ -25,7 +25,7 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
             wrapCreate: async ( context, createOperation ): Promise<any> => {
                 const { data, graphqlContext } = context
                 const relationData = get( data, owningSideField )
-                if ( !relationData ) {
+                if ( ! relationData ) {
                     return createOperation()
                 }
                 const connectId: Record<string, any> = await findUniqueObjectOnModel( get( relationData, 'connect' ), relationImpl.getRefSide() )
@@ -49,7 +49,7 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
             wrapUpdate: async ( context, updateOperation ): Promise<any> => {
                 const { data, graphqlContext } = context
                 const relationData = get( data, owningSideField )
-                if ( !relationData ) {
+                if ( ! relationData ) {
                     return updateOperation()
                 }
 
@@ -87,7 +87,7 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
             wrapCreate: async ( context, createOperation ): Promise<any> => {
                 const { data, graphqlContext } = context
                 const relationData = get( data, refSideField )
-                if ( !relationData ) {
+                if ( ! relationData ) {
                     return createOperation()
                 }
 
@@ -112,7 +112,7 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
             wrapUpdate: async ( context, updateOperation ): Promise<any> => {
                 const { where, data, graphqlContext } = context
                 const relationData = get( data, refSideField )
-                if ( !relationData ) {
+                if ( ! relationData ) {
                     return updateOperation()
                 }
 
