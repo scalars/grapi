@@ -55,15 +55,15 @@ const createInputField = (
         relationTo: Model,
         fieldName: string,
         isList: boolean,
-        exeptionField: string = undefined
+        exceptionField: string = undefined
     ) => {
         forEach( relationTo.getFields(), ( modelField: Field, keyField: string,  ) => {
             if ( ( modelField instanceof RelationField && modelField.getRelationName() === relationName ) ) {
-                exeptionField = keyField
+                exceptionField = keyField
                 return false
             }
         } )
-        const relationField = capitalize( exeptionField )
+        const relationField = capitalize( exceptionField )
         const relationInput = `${relationNamings}CreateWithout${relationField}Input`
         const inputField = createInputField(
             relationTo,
@@ -72,14 +72,15 @@ const createInputField = (
             getWhereInputName,
             getWhereUniqueInputName,
             relationTo.getCreateMutationFactory,
-            exeptionField,
+            exceptionField,
             false
         )
         const relationCreateInput = `${relationNamings}Create${isList ? `Many` : `One` }Without${ relationField }Input`
+        const whereUnique = `${getWhereUniqueInputName( relationTo )}`
         root.addInput( `input ${relationInput} { ${ inputField } }` )
         root.addInput( `input ${relationCreateInput} {
             create: ${ isList ? `[${relationInput}]` : `${relationInput}` }
-            connect: ${ isList ? `[${getWhereUniqueInputName( relationTo )}]` : `${getWhereUniqueInputName( relationTo )}` }
+            connect: ${ isList ? `[${whereUnique}]` : `${whereUnique}` }
         }` )
         content.push( `${fieldName}: ${relationCreateInput}` )
     }
@@ -136,7 +137,7 @@ const createInputField = (
         // add create and connect for relation
         const isRelation = field instanceof RelationField
         const isList = field.isList()
-        if ( isRelation && !isList ) {
+        if ( isRelation && ! isList ) {
             // to-one
             const relationTo = ( field as RelationField ).getRelationTo()
             const relationType = ( field as RelationField ).getRelationType()
