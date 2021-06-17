@@ -97,7 +97,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
 
     // OneToManyRelation
     public async findManyFromOneRelation( foreignKey: string, foreignId: string, where: Record<string, any> ): Promise<any[]> {
-        return await this.findRecursive( { ...where, [foreignKey]: foreignId }, {} )
+        return await this.findRecursive( { ...where, [foreignKey]: { [Operator.eq]: foreignId } }, {} )
     }
 
     // ManyToManyRelation
@@ -110,7 +110,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         const relationTableName = `_${sourceSideName}_${targetSideName}`
         const relationData = await this.db.collection( relationTableName ).findOne( { sourceSideId } )
         const relationIds = get( relationData, `targetSideIds`, [] )
-        return await this.findRecursive( { ...where, id: { in: relationIds } }, {} )
+        return await this.findRecursive( { ...where, id: { [Operator.in]: relationIds } }, {} )
     }
 
     public async addIdToManyRelation(

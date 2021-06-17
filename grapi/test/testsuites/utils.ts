@@ -7,7 +7,10 @@ import http from 'http'
 import Koa from 'koa'
 import { isArray, mapValues } from 'lodash'
 
+import { MongodbDataSourceGroup } from '../../../grapi-mongodb/src/index'
 import { DataSource, Grapi } from '../../src'
+
+export { MongodbDataSourceGroup }
 
 export const createApp = ( { sdl, dataSources, scalars, }: {
     sdl: string;
