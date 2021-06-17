@@ -63,10 +63,10 @@ export default class WhereInputPlugin implements Plugin {
     public parseWhere( where: Record<string, any>, model: Model ): Where {
         // parse where: {name: value, price_gt: value}
         // to {name: {eq: value}, price: {gt: value}}
-        return this.parseWhereIterate( where, model )
+        return WhereInputPlugin.parseWhereIterate( where, model )
     }
 
-    public parseWhereIterate( where: Record<string, any>, model: Model ): Where {
+    public static parseWhereIterate( where: Record<string, any>, model: Model ): Where {
         return reduce( where, ( result, value, key ) => {
             if ( key === Operator.or || key === Operator.and  ) {
                 value = map( value, ( where: Where ) => {
@@ -95,7 +95,7 @@ export default class WhereInputPlugin implements Plugin {
                     value = some || none || every
                 }
                 result[fieldName] = {
-                    filters: this.parseWhereIterate( value, relationTo ),
+                    filters: WhereInputPlugin.parseWhereIterate( value, relationTo ),
                     sourceKey: get( model.getMetadata( MODEL_DIRECTIVE ), MODEL_DIRECTIVE_SOURCE_KEY ),
                     targetKey: get( relationTo.getMetadata( MODEL_DIRECTIVE ), MODEL_DIRECTIVE_SOURCE_KEY ),
                     relation: {

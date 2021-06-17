@@ -1,6 +1,8 @@
+import { RelationField, RelationType } from '../dataModel'
 import EnumField from '../dataModel/enumField'
 import Field from '../dataModel/field'
 import ObjectField from '../dataModel/objectField'
+import { DataModelType } from '../dataModel/type'
 import { forEach, transform, upperFirst } from '../lodash'
 import { Context } from './interface'
 
@@ -34,8 +36,34 @@ export const recursiveCreateType = ( fields: Record<string, Field>, context: Con
             const objectTypename = upperFirst( name )
             root.addObjectType( `type ${objectTypename} { ${typeFields.join( ' ' )} }` )
         }
+        let argumentsField = ``
+        if ( ! field.isScalar() && field.getType() !== DataModelType.OBJECT ) {
+            const relationField = field as RelationField
+            const relationType = relationField.getRelationType()
+            const relationTo = relationField.getRelationTo()
+            const relationNamings = relationTo.getNamings()
+            if (
+                relationType === RelationType.biManyToMany ||
+                (
+                    relationField.isList() && (
+                        relationType === RelationType.biOneToMany ||
+                        relationType === RelationType.uniOneToMany
+                    )
+                )
+            ) {
+                // TODO Add support for orderBy Input
+                // first: Int
+                // last: Int
+                // before: String
+                // after: String
+                // orderBy: ${relationNamings.capitalSingular}OrderInput
+                argumentsField = `(
+                    where: ${relationNamings.capitalSingular}WhereInput
+                )`
+            }
+        }
 
-        content.push( `${name}: ${graphqlType( field )}` )
+        content.push( `${name}${argumentsField}: ${graphqlType( field )}` )
     } )
 
     return content

@@ -117,7 +117,9 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
             },
 
             resolveFields: {
-                [relation.sourceField]: ( data, _, graphqlContext ): Promise<any[]> => relationImpl.joinManyOnOneSide( data, graphqlContext ),
+                [relation.sourceField]: ( data, argument, graphqlContext ): Promise<any[]> => {
+                    return relationImpl.joinManyOnOneSide( data, argument, graphqlContext )
+                },
             },
         },
     }

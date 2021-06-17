@@ -1,6 +1,6 @@
-import { Operator } from '..'
+import { Operator, WhereInputPlugin } from '..'
 import { Model, RelationType } from '../dataModel'
-import { isEmpty, isNil } from '../lodash'
+import { get } from '../lodash'
 import { InputRecursiveRelation } from './index'
 import { Relation } from './interface'
 
@@ -127,24 +127,28 @@ export default class ManyToMany implements Relation {
     }
 
     // when joining data from modelB to modelA, the relationship is save at modelA datasource
-    public async joinModelA( modelBId: string, context: any ) {
-        const records = await this.modelA.getDataSource().findManyFromManyRelation(
+    public async joinModelA( modelBId: string, argument: Record< string, any >, context: any, where: Record<string, any> = undefined ) {
+        where = get( argument, `where`, {} )
+        where = WhereInputPlugin.parseWhereIterate( where, this.modelB )
+        return await this.modelA.getDataSource().findManyFromManyRelation(
             this.modelB.getNamings().singular,
             this.modelA.getNamings().singular,
             modelBId,
+            where,
             context,
         )
-        return isEmpty( records ) ? [] : records.filter( record => !isNil( record ) )
     }
 
     // when joining data from modelA to modelB, the relationship is save at modelB datasource
-    public async joinModelB( modelAId: string, context: any ) {
-        const records = await this.modelB.getDataSource().findManyFromManyRelation(
+    public async joinModelB( modelAId: string, argument: Record< string, any >, context: any, where: Record<string, any> = undefined ) {
+        where = get( argument, `where`, {} )
+        where = WhereInputPlugin.parseWhereIterate( where, this.modelB )
+        return await this.modelB.getDataSource().findManyFromManyRelation(
             this.modelA.getNamings().singular,
             this.modelB.getNamings().singular,
             modelAId,
+            where,
             context,
         )
-        return isEmpty( records ) ? [] : records.filter( record => !isNil( record ) )
     }
 }

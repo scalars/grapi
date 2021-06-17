@@ -129,13 +129,23 @@ export interface EmbeddableRelation {
 }
 
 export interface OneToManyRelation {
-    findManyFromOneRelation( foreignKey: string, foreignId: string, context: any ): Promise<any[]>;
+    findManyFromOneRelation(
+        foreignKey: string,
+        foreignId: string,
+        where: Record<string, any>,
+        context: any
+    ): Promise<any[]>;
 }
 
 export interface ManyToManyRelation {
     // it's source-side data-source's responsibility to get the many relation from source-side
     findManyFromManyRelation(
-        sourceSideName: string, targetSideName: string, sourceSideId: string, context: any ): Promise<any[]>;
+        sourceSideName: string,
+        targetSideName: string,
+        sourceSideId: string,
+        where: Record<string, any>,
+        context: any
+    ): Promise<any[]>;
     addIdToManyRelation(
         sourceSideName: string,
         targetSideName: string,
