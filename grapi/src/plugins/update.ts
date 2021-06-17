@@ -24,7 +24,10 @@ const createObjectInputField = ( prefix: string, field: ObjectField, context: Co
             const fieldWithPrefix = `${prefix}${upperFirst( name )}`
             const typeFields = createObjectInputField( fieldWithPrefix, nestedField, context )
             const objectInputName = `${fieldWithPrefix}UpdateInput`
-            root.addInput( `input ${objectInputName} {${typeFields.join( ' ' )}}` )
+            root.addInput( `input ${objectInputName} {
+                    ${typeFields.join( ' ' )}
+                }`
+            )
             content.push( `${name}: ${objectInputName}` )
             return
         }
@@ -78,7 +81,11 @@ const createInputField = (
         )
         const relationCreateInput = `${relationNamings}Update${isList ? `Many` : `One` }Without${ relationField }Input`
         const whereUnique = `${getWhereUniqueInputName( relationTo )}`
-        root.addInput( `input ${relationInput} { ${ inputField } }` )
+        root.addInput(
+            `input ${relationInput} { 
+                ${ inputField } 
+            }`
+        )
         root.addInput( `input ${relationCreateInput} {
             create: ${ isList ? `[${relationInput}]` : `${relationInput}` }
             connect: ${ isList ? `[${whereUnique}]` : `${whereUnique}` }
@@ -104,7 +111,11 @@ const createInputField = (
                 // wrap with set field
                 const fieldWithPrefix = `${capName}${upperFirst( name )}`
                 const listOperationInput = `${fieldWithPrefix}UpdateInput`
-                root.addInput( `input ${listOperationInput} {set: [${field.getTypename()}]}` )
+                root.addInput(
+                    `input ${listOperationInput} {
+                        set: [${field.getTypename()}]
+                    }`
+                )
                 fieldType = listOperationInput
                 mutationFactory.markArrayField( name )
             } else {
@@ -119,7 +130,10 @@ const createInputField = (
             const fieldWithPrefix = `${model.getNamings().capitalSingular}${upperFirst( name )}`
             const typeFields = createObjectInputField( fieldWithPrefix, field, context )
             const objectInputName = `${fieldWithPrefix}UpdateInput`
-            root.addInput( `input ${objectInputName} {${typeFields.join( ' ' )}}` )
+            root.addInput( `input ${objectInputName} {
+                    ${typeFields.join( ' ' )}
+                }`
+            )
 
             let fieldType: string
             if ( field.isList() ) {
