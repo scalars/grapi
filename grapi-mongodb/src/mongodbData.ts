@@ -52,7 +52,7 @@ export class MongodbData {
             .toArray()
     }
 
-    public async findRecursive ( where: any, orderBy: OrderBy, data: any[] = [] ): Promise<any[]> {
+    public async findRecursive ( where: Record<string, any>, orderBy: OrderBy, data: any[] = [] ): Promise<any[]> {
         let iteration: number = 0
         await iterateWhereFilter( where, async ( whereFilter: ( Record<string, RelationWhere> | Array<Record<string, RelationWhere>> ), operator: ( Operator | WhereOperator ) ) => {
             if ( operator as WhereOperator === WhereOperator.relation ) {
@@ -130,7 +130,7 @@ export class MongodbData {
                             filters
                         )
                     }
-                    let filterWhere: boolean = false
+                    let filterWhere: boolean
                     if ( filter === FilterListObject.SOME ) {
                         filterWhere = ! isEmpty( relationData )
                     } else if ( filter === FilterListObject.NONE ) {

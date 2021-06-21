@@ -1,11 +1,10 @@
 import chai from 'chai'
 import chaiHttp = require( 'chai-http' );
 chai.use( chaiHttp )
-import { MongodbDataSourceGroup } from '@scalars/grapi-mongodb'
 import { MongoClient } from 'mongodb'
 
 import { sdl, testSuits } from './testsuites/filters'
-import { createGrapiApp, prepareConfig } from './testsuites/utils'
+import { createGrapiApp, MongodbDataSourceGroup, prepareConfig } from './testsuites/utils'
 
 const { mongoUri } = prepareConfig()
 const DB_NAME = 'grapi'

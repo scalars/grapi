@@ -1,6 +1,6 @@
-import { Operator } from '..'
+import { Operator, WhereInputPlugin } from '..'
 import { Model, RelationType } from '../dataModel'
-import { isEmpty } from '../lodash'
+import { get, isEmpty } from '../lodash'
 import { InputRecursiveRelation } from './index'
 import { Relation, WithForeignKey } from './interface'
 
@@ -119,8 +119,10 @@ export default class OneToMany implements Relation, WithForeignKey {
         await this.manySideModel.getDataSource().delete( { id: { [Operator.eq]: manySideId } }, context )
     }
 
-    public async joinManyOnOneSide( data: Record<string, any>, context: any ): Promise<any[]> {
-        return await this.manySideModel.getDataSource().findManyFromOneRelation( this.foreignKey, data.id, context )
+    public async joinManyOnOneSide( data: Record<string, any>, argument: any, context: any, where: Record<string, any> = undefined ): Promise<any[]> {
+        where = get( argument, `where`, {} )
+        where = WhereInputPlugin.parseWhereIterate( where, this.manySideModel )
+        return await this.manySideModel.getDataSource().findManyFromOneRelation( this.foreignKey, data.id, where, context )
     }
 
     public async joinOneOnManySide( data: Record<string, any>, context: any ): Promise<any> {

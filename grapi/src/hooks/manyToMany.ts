@@ -143,7 +143,9 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
             },
 
             resolveFields: {
-                [relationImpl.getModelAField()]: ( data, _, graphqlContext ): Promise<any[]> => relationImpl.joinModelB( data.id, graphqlContext ),
+                [relationImpl.getModelAField()]: ( data, argument, graphqlContext ): Promise<any[]> => {
+                    return relationImpl.joinModelB( data.id, argument, graphqlContext )
+                },
             },
         },
 
@@ -219,7 +221,9 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
             },
 
             resolveFields: {
-                [relationImpl.getModelBField()]: ( data, _, graphqlContext ): Promise<any[]> => relationImpl.joinModelA( data.id, graphqlContext ),
+                [relationImpl.getModelBField()]: ( data, argument, graphqlContext ): Promise<any[]> => {
+                    return relationImpl.joinModelA( data.id, argument, graphqlContext )
+                },
             },
         },
     }
