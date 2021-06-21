@@ -86,12 +86,21 @@ const createInputField = (
                 ${ inputField } 
             }`
         )
-        root.addInput( `input ${relationCreateInput} {
-            create: ${ isList ? `[${relationInput}]` : `${relationInput}` }
-            connect: ${ isList ? `[${whereUnique}]` : `${whereUnique}` }
-            disconnect: ${ isList ? `[${whereUnique}]` : `Boolean` }
-            delete: ${ isList ? `[${whereUnique}]` : `Boolean` }
-        }` )
+        if ( isList ) {
+            root.addInput( `input ${relationCreateInput} {
+                create: [${relationInput}]
+                connect: [${whereUnique}]
+                disconnect: [${whereUnique}]
+                delete: [${whereUnique}]
+            }` )
+        } else {
+            root.addInput( `input ${relationCreateInput} {
+                create: ${relationInput}
+                connect: ${whereUnique}
+                disconnect: Boolean
+                delete: Boolean
+            }` )
+        }
         content.push( `${fieldName}: ${relationCreateInput}` )
     }
 
