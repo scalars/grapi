@@ -36,7 +36,6 @@ export const recursiveCreateType = ( fields: Record<string, Field>, context: Con
             const objectTypename = upperFirst( name )
             root.addObjectType( `type ${objectTypename} { ${typeFields.join( ' ' )} }` )
         }
-        let nonNullType = ``
         let argumentsField = ``
         if ( ! field.isScalar() && field.getType() !== DataModelType.OBJECT ) {
             const relationField = field as RelationField
@@ -58,14 +57,13 @@ export const recursiveCreateType = ( fields: Record<string, Field>, context: Con
                 // before: String
                 // after: String
                 // orderBy: ${relationNamings.capitalSingular}OrderInput
-                nonNullType = `!`
                 argumentsField = `(
                     where: ${relationNamings.capitalSingular}WhereInput
                 )`
             }
         }
 
-        content.push( `${name}${argumentsField}: ${graphqlType( field )}${nonNullType}` )
+        content.push( `${name}${argumentsField}: ${graphqlType( field )}` )
     } )
 
     return content
