@@ -1,6 +1,5 @@
 import {
     ArrayOperator,
-    filter,
     getRelationItemKeyId,
     iterateBaseFilter,
     iterateRelationsWhere,
@@ -77,13 +76,26 @@ export class MongodbData {
                     iteration = iteration + 1
                 }
                 if ( isEmpty( relationFilters ) === false ) {
-                    const dataCollection: any[] = await this.findInCollection( {} )
+                    let baseFiltersOrAnd = []
+                    forEach( relationFilters, ( item: RelationWhere ) => {
+                        forEach( item, ( value: Record<string, any>, key: string ) => {
+                            if ( ! get( value, 'relation' ) ) {
+                                delete item[key]
+                                baseFiltersOrAnd.push( { [key]: value } )
+                            }
+                        } )
+                    } )
+                    baseFiltersOrAnd = uniqWith( baseFiltersOrAnd, isEqual )
+                    const whereFiltersOrAnd = this.whereToFilterQuery(
+                        baseFiltersOrAnd as any, operator as any
+                    )
+                    const dataCollection: any[] = await this.findInCollection( whereFiltersOrAnd )
                     if ( operator === Operator.or ) {
                         for ( const itemWhere of relationFilters ) {
                             data = concat( data, await this.executeRelationFilters( itemWhere, dataCollection ) )
                         }
                         data = uniqWith( compact( data ), isEqual )
-                    } else {
+                    } else { // and filters
                         data = isEmpty( data ) && iteration === 0 ? dataCollection : data
                         for ( const itemWhere of relationFilters ) {
                             data = await this.executeRelationFilters( itemWhere, data )
@@ -100,15 +112,11 @@ export class MongodbData {
             const filter: boolean = await iterateRelationsWhere( where,  async ( relationWhere: RelationWhere ): Promise<boolean> => {
                 const relation: RelationWhereConfig = relationWhere.relation
                 const relations: Record<string, RelationWhere> = {}
-                forEach( relationWhere.filters, ( value: RelationWhere, key: string ) => {
+                forEach( relationWhere.filters || {}, ( value: RelationWhere, key: string ) => {
                     if ( value.relation ) { relations[ key ] = value }
                 } )
-                const {
-                    relation: {
-                        list, ship, source, target, filter, foreignKey
-                    },
-                    filters, targetKey
-                } = relationWhere
+                const { filters, targetKey } = relationWhere
+                const { list, ship, source, target, filter, foreignKey } = relation || {}
                 if ( list ) {
                     let relationData: any[]
                     const isManyToMany = ship === RelationShip.ManyToMany
@@ -218,12 +226,11 @@ export class MongodbData {
      * @param where Filtro a aplicar en los muchos objetos
      */
     public async findManyRelation( foreignKey: string, foreignId: string, collectionName: string, where: Where ): Promise<any[]> {
-        const filterQuery: FilterQuery<any> = this.whereToFilterQuery( where )
-        const data = await this.db.collection( collectionName )
+        const filterQuery: FilterQuery<any> = this.whereToFilterQuery( { ...where, [foreignKey]: { [Operator.eq]: foreignId } } )
+        return await this.db.collection( collectionName )
             .find( filterQuery )
             .project( { _id: 0 } )
             .toArray()
-        return filter( data, { [foreignKey]: { [Operator.eq]: foreignId } } )
     }
 
     /**
