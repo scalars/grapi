@@ -1,6 +1,6 @@
 {
   "name": "@scalars/grapi-mongodb",
-  "version": "2.1.4",
+  "version": "2.1.7",
   "description": "The mongodb package of Grapi",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -35,7 +35,7 @@
   "author": "madrov",
   "license": "Apache-2.0",
   "dependencies": {
-    "@scalars/grapi": "^2.1.4",
+    "@scalars/grapi": "^2.1.7",
     "mongodb": "^3.6.9",
     "mongodb-client-encryption": "^1.2.4"
   },
