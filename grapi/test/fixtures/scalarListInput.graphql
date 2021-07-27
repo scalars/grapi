@@ -1,0 +1,12 @@
+scalar Url
+scalar Email
+scalar DateTime
+scalar Json
+
+type User @Model(dataSource: "memory", key: "users_scalar_list"){
+    id: ID! @unique @autoGen
+    name: String! @unique
+    hobbies: [ String ]
+    phones: [ Int ]
+    friends: [ Json ]
+}

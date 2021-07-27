@@ -48,7 +48,6 @@ const createInputField = (
     recursive: boolean = true
 ): string[] => {
     const { root } = context
-    const capName = model.getNamings().capitalSingular
     const fields = model.getFields()
     const content: string[] = []
     const mutationFactory = getMutationFactoryFromModel( model )
@@ -118,11 +117,12 @@ const createInputField = (
             let fieldType: string
             if ( field.isList() ) {
                 // wrap with set field
-                const fieldWithPrefix = `${capName}${upperFirst( name )}`
-                const listOperationInput = `${fieldWithPrefix}UpdateInput`
+                const listOperationInput = `${field.getTypename()}ListFieldUpdateInput`
                 root.addInput(
                     `input ${listOperationInput} {
                         set: [${field.getTypename()}]
+                        add: [${field.getTypename()}]
+                        remove: [${field.getTypename()}]
                     }`
                 )
                 fieldType = listOperationInput

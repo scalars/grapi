@@ -323,19 +323,22 @@ export class MongodbData {
         return {}
     }
 
-    public transformMutation = ( mutation: Mutation ): Record<string, any> => {
-        const payload = mutation.getData()
+    public transformMutation = ( mutation: Mutation, set: boolean = false ): Record<string, any> => {
+        const payload = set ? { $set: mutation.getData() } : mutation.getData()
         mutation.getArrayOperations().forEach( operation => {
             const { fieldName, operator, value } = operation
-            // TODO Add here operators like add and remove
-            // only deal with set for now
-            // add add, remove in following version
-            if ( operator !== ArrayOperator.set ) {
-                return
+            if ( operator == ArrayOperator.set ) {
+                if ( set ) {
+                    payload.$set[fieldName] = value
+                } else {
+                    payload[fieldName] = value
+                }
+            } else if ( operator == ArrayOperator.add ) {
+                payload.$addToSet = { ...payload.$addToSet, [ fieldName ]: { $each: value } }
+            } else if ( operator == ArrayOperator.remove ) {
+                payload.$pull = { ...payload.$pull, [ fieldName ]: { $in: value } }
             }
-            payload[fieldName] = value
         } )
-
         return payload
     };
 
