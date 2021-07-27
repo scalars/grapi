@@ -1,10 +1,10 @@
 import Model from './dataModel/model'
-import { Context, Plugin } from './plugins/interface'
+import { Context, Plugin } from './plugins'
 import RootNode from './rootNode'
 
 export default class Generator {
-    private plugins: Plugin[];
-    private context: Context;
+    private readonly plugins: Plugin[];
+    private readonly context: Context;
 
     constructor( {
         plugins,

@@ -9,9 +9,9 @@ import Field from './field'
 import { DirectiveModelAction } from './type'
 
 export default class Model {
-    private name: string;
-    private fields: Record<string, Field>;
-    private namings: {
+    private readonly name: string;
+    private readonly fields: Record<string, Field>;
+    private readonly namings: {
         plural: string;
         singular: string;
         capitalSingular: string;
@@ -31,7 +31,7 @@ export default class Model {
     private updateMutationFactory: MutationFactory = new MutationFactory();
 
     // for object type api
-    private isObject: boolean;
+    private readonly isObject: boolean;
 
     constructor( {
         name,

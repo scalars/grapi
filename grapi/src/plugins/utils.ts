@@ -19,7 +19,7 @@ const graphqlType = ( field: Field ): string => {
     return value
 }
 
-export const recursiveCreateType = ( fields: Record<string, Field>, context: Context ): string[] => {
+const recursiveCreateType = ( fields: Record<string, Field>, context: Context ): string[] => {
     const { root } = context
     const content: string[] = []
     forEach( fields, ( field, name ) => {
@@ -80,4 +80,4 @@ const parseRelationConfig = ( relationConfig ): Record<string, string> => {
     } )
 }
 
-export { parseRelationConfig }
+export { parseRelationConfig, recursiveCreateType }

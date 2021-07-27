@@ -8,6 +8,7 @@ export interface Plugin {
     init?( context: Context ): void;
     setPlugins?( plugins: Plugin[] ): void;
     visitModel( model: Model, context: Context ): void;
+    extendTypes?( Model: Model ): Record<string, string>;
     resolveInQuery?( { model, dataSource }: {model: Model; dataSource: any} ): IObjectTypeResolver;
     resolveInMutation?( { model, dataSource }: {model: Model; dataSource: any} ): IObjectTypeResolver;
     resolveInRoot?( { model, dataSource }: {model: Model; dataSource: any} ): IResolvers;

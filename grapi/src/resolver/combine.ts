@@ -1,11 +1,12 @@
 import { IResolvers } from 'graphql-tools'
 
 import Model from '../dataModel/model'
-import { assign } from '../lodash'
+import { assign, forEach } from '../lodash'
 import { Plugin } from '../plugins'
 
 export default ( plugins: Plugin[], models: Model[] ): IResolvers => {
     let resolvers: IResolvers = { }
+    let extendType: Record<string, any> = {}
     models.forEach( model => {
         plugins.forEach( plugin => {
             resolvers = {
@@ -20,7 +21,13 @@ export default ( plugins: Plugin[], models: Model[] ): IResolvers => {
                     resolvers.Mutation
                 )
             }
+            if ( plugin.extendTypes ) {
+                extendType = { ...extendType, ...plugin.extendTypes( model ) }
+            }
         } )
     } )
-    return resolvers
+    forEach( extendType, ( value: string, key: string ) => {
+        extendType[ key ] = resolvers[value]
+    } )
+    return { ...resolvers, ...extendType }
 }
