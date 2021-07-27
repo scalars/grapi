@@ -57,11 +57,11 @@ export class MongodbDataSource extends MongodbData implements DataSource {
     }
 
     public async update( where: Where, mutation: Mutation ): Promise<any> {
-        const payload = this.transformMutation( mutation )
+        const payload = this.transformMutation( mutation, true )
         const filterQuery = this.whereToFilterQuery( where )
         if ( isEmpty( payload ) === false ) {
             try {
-                await this.db.collection( this.collectionName ).updateOne( filterQuery, { $set: payload } )
+                await this.db.collection( this.collectionName ).updateOne( filterQuery, payload )
             } catch ( error ) {
                 this.handleMongoDbError( error )
             }

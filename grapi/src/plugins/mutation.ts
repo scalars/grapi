@@ -1,6 +1,6 @@
 // tslint:disable:max-classes-per-file
-import { Mutation } from '..'
-import { forEach, get, isEmpty, omit, pick } from '../lodash'
+import { ArrayOperator, Mutation } from '..'
+import { forEach, isEmpty, omit, pick } from '../lodash'
 
 const mutationWithoutArrayField = ( originPayload: any ): Mutation => {
     const payload = { ...originPayload }
@@ -33,17 +33,31 @@ export class PluginMutation implements Mutation {
         const arrayFieldData = pick( this.payload, this.arrayFields )
         const operations = []
         forEach( arrayFieldData, ( operationValue, fieldName ) => {
-            const value = get( operationValue, 'set' )
-            if ( !value ) {
-                return
+            const setValue = operationValue[ArrayOperator.set]
+            if ( setValue ) {
+                operations.push( {
+                    fieldName,
+                    operator: ArrayOperator.set,
+                    value: setValue,
+                } )
             }
-            operations.push( {
-                fieldName,
-                operator: 'set',
-                value,
-            } )
+            const addValue = operationValue[ArrayOperator.add]
+            if ( addValue ) {
+                operations.push( {
+                    fieldName,
+                    operator: ArrayOperator.add,
+                    value: addValue,
+                } )
+            }
+            const removeValue = operationValue[ArrayOperator.remove]
+            if ( removeValue ) {
+                operations.push( {
+                    fieldName,
+                    operator: ArrayOperator.remove,
+                    value: removeValue,
+                } )
+            }
         } )
-
         return operations
     };
 }

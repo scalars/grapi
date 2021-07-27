@@ -105,8 +105,7 @@ const createInputField = (
             let fieldType: string
             if ( field.isList() ) {
                 // wrap with set field
-                const fieldWithPrefix = `${capName}${upperFirst( name )}`
-                const listOperationInput = `${fieldWithPrefix}CreateInput`
+                const listOperationInput = `${field.getTypename()}ListFieldCreateInput`
                 root.addInput(
                     `input ${listOperationInput} {
                         set: [${field.getTypename()}]
