@@ -1,6 +1,7 @@
 
 // export interface
-export { Plugin } from './interface'
+export { Context, Plugin } from './interface'
+export { recursiveCreateType } from './utils'
 
 // export implementation
 export { default as BaseTypePlugin } from './baseType'
