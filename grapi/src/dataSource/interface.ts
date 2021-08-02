@@ -33,6 +33,8 @@ export enum Operator {
     lt = 'lt',
     lte = 'lte',
     in = 'in',
+    notIn = 'nin',
+    all = 'all',
     between = 'between',
     or = 'OR',
     and = 'AND',

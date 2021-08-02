@@ -258,7 +258,7 @@ export class MongodbData {
         )
     }
 
-    public whereToFilterQuery( where: Where, operator: Operator = undefined ): FilterQuery<any> {
+    public whereToFilterQuery( where: Where, operator: Operator = undefined ): FilterQuery<Record<string, any>> {
         const filterQuery: Record<string, unknown> = {}
         const whereCallback = ( field: string, operator: Operator, value: any ): void => {
             switch ( operator ) {
@@ -288,6 +288,12 @@ export class MongodbData {
                 break
             case Operator.in:
                 filterQuery[field] = { $in: value }
+                break
+            case Operator.all:
+                filterQuery[field] = { $all: value }
+                break
+            case Operator.notIn:
+                filterQuery[field] = { $nin: value }
                 break
             case Operator.between:
                 filterQuery[field] = { $gte: value.from, $lte: value.to }

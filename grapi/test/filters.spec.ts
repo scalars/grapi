@@ -18,6 +18,7 @@ const data = [
         'married': false,
         'website': 'http://bennet.com',
         'email': 'ben@correo.com',
+        'aliases': [ 'ben', 'ven' ],
         'skills': [
             { 'code': 'S00', 'name': 'Software Grafico' },
             { 'code': 'S01', 'name': 'Gig Data' },
@@ -30,6 +31,7 @@ const data = [
         'married': true,
         'website': 'http://woutnet.com',
         'email': 'wout@correo.com',
+        'aliases': [ 'wow', 'ben' ],
         'skills': [
             { 'code': 'S02', 'name': 'Fintech' },
             { 'code': 'S03', 'name': 'Ecommerce' },
@@ -42,6 +44,7 @@ const data = [
         'married': true,
         'website': 'http://michelanet.com.co/index.html',
         'email': 'michela@correo.com.co',
+        'aliases': [ 'mishel', 'wow' ],
         'skills': [
             { 'code': 'S00', 'name': 'Software Grafico' },
             { 'code': 'S05', 'name': 'Arquitectura de Software' }
