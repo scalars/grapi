@@ -25,7 +25,7 @@ const createFilterFromOperator = ( value, op ): any => {
 
 export interface RelationWhereConfig {
     foreignKey: string;
-    filter: FilterListObject | FilterListScalar,
+    filter: FilterListObject,
     source: string;
     target: string;
     ship: RelationShip;

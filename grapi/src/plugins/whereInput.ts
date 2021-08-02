@@ -3,7 +3,7 @@ import { MODEL_DIRECTIVE, MODEL_DIRECTIVE_SOURCE_KEY } from '../constants'
 import { RelationField } from '../dataModel'
 import Field from '../dataModel/field'
 import Model from '../dataModel/model'
-import { DataModelType, FilterListObject } from '../dataModel/type'
+import { DataModelType, FilterListObject, FilterListScalar } from '../dataModel/type'
 import { RelationWhereConfig } from '../helper'
 import { forEach, get, isEmpty, map, mapValues, reduce, size } from '../lodash'
 import RootNode from '../rootNode'
@@ -169,8 +169,8 @@ export default class WhereInputPlugin implements Plugin {
                 case DataModelType.ENUM:
                 case DataModelType.ID:
                     root.addInput( `input FilterScalar${typeName}List { 
-                        has: [ ${typeName} ! ] 
-                        hasNot: [ ${typeName} ! ] 
+                        ${FilterListScalar.HAS}: [ ${typeName} ! ]
+                        ${FilterListScalar.HASNOT}: [ ${typeName} ! ]
                     }` )
                     inputFields.push( {
                         fieldName: name,
@@ -179,8 +179,8 @@ export default class WhereInputPlugin implements Plugin {
                     break
                 case DataModelType.CUSTOM_SCALAR:
                     root.addInput( `input FilterScalar${typeName}List { 
-                        has: [ ${typeName} ! ] 
-                        hasNot: [ ${typeName} ! ] 
+                        ${FilterListScalar.HAS}: [ ${typeName} ! ]
+                        ${FilterListScalar.HASNOT}: [ ${typeName} ! ]
                     }` )
                     inputFields = WhereInputPlugin.createWhereFilterListCustomScalars( inputFields, typeName, name )
                     break
