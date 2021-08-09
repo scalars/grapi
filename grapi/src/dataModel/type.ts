@@ -4,6 +4,11 @@ export const enum FilterListObject {
     EVERY = 'every'
 }
 
+export const enum FilterListScalar {
+    HAS= 'has',
+    HASNOT = 'hasNot',
+}
+
 export enum DirectiveModelAction {
     Create = `Create`,
     Read = `Read`,

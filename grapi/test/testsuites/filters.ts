@@ -1,9 +1,11 @@
 import chai from 'chai'
+import chaiSubset from 'chai-subset'
 // import faker from 'faker';
 import { readFileSync } from 'fs'
 import { some } from 'lodash'
 import path from 'path'
 // import { wrapSetToArrayField } from './utils';
+chai.use( chaiSubset )
 const expect = chai.expect
 
 const userFields = `
@@ -300,5 +302,35 @@ export function testSuits() {
         expect( res.users[0] ).to.deep.includes( { name: 'Ben Bohm' } )
     } )
 
+    it( `Scalar string list: Should pass filter`, async (  ) => {
+        const queryUsers = `
+        query ($where: UserWhereInput!) {
+          users( where: $where) { ${userFields} }
+        }`
+        let variablesUsers: any = {
+            where: { aliases: { has: [ 'ben' ] } }
+        }
+        const res = await ( this as any ).graphqlRequest( queryUsers, variablesUsers )
+        expect( res.users ).with.lengthOf( 2 )
+        expect( res.users ).containSubset(
+            [ { name: 'Wout Beckers' }, { name: 'Ben Bohm' } ]
+        )
+        variablesUsers = {
+            where: { aliases: { hasNot: [ 'ben' ] } }
+        }
+        const res2 = await ( this as any ).graphqlRequest( queryUsers, variablesUsers )
+        expect( res2.users ).with.lengthOf( 1 )
+        expect( res2.users ).containSubset(
+            [ { name: 'Michela Battaglia' } ]
+        )
+        variablesUsers = {
+            where: { aliases: { hasNot: [ 'wow' ] } }
+        }
+        const res3 = await ( this as any ).graphqlRequest( queryUsers, variablesUsers )
+        expect( res3.users ).with.lengthOf( 1 )
+        expect( res3.users ).containSubset(
+            [ { name: 'Ben Bohm' } ]
+        )
+    } )
     // TODO: DateTime filters tests
 }

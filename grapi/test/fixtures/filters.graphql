@@ -17,4 +17,5 @@ type users @Model(dataSource: "memory", key: "users_filters"){
     website: Url
     email: Email
     skills: Json
+    aliases: [ String! ]
 }
