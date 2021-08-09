@@ -132,9 +132,7 @@ export interface EmbeddableRelation {
 
 export interface OneToManyRelation {
     findManyFromOneRelation(
-        foreignKey: string,
-        foreignId: string,
-        where: Record<string, any>,
+        listFindQuery: ListFindQuery,
         context: any
     ): Promise<any[]>;
 }
@@ -145,7 +143,7 @@ export interface ManyToManyRelation {
         sourceSideName: string,
         targetSideName: string,
         sourceSideId: string,
-        where: Record<string, any>,
+        listFindQuery: ListFindQuery,
         context: any
     ): Promise<any[]>;
     addIdToManyRelation(

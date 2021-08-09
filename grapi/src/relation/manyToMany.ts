@@ -1,4 +1,4 @@
-import { Operator, WhereInputPlugin } from '..'
+import { ListFindQuery, Operator, OrderInputPlugin, WhereInputPlugin } from '..'
 import { Model, RelationType } from '../dataModel'
 import { get } from '../lodash'
 import { InputRecursiveRelation } from './index'
@@ -127,28 +127,34 @@ export default class ManyToMany implements Relation {
     }
 
     // when joining data from modelB to modelA, the relationship is save at modelA datasource
-    public async joinModelA( modelBId: string, argument: Record< string, any >, context: any, where: Record<string, any> = undefined ) {
-        where = get( argument, `where`, {} )
-        where = WhereInputPlugin.parseWhereIterate( where, this.modelB )
+    public async joinModelA( modelBId: string, argument: Record< string, any >, context: any ) {
+        const listFindQuery: ListFindQuery = this.listFindQuery( argument )
         return await this.modelA.getDataSource().findManyFromManyRelation(
             this.modelB.getNamings().singular,
             this.modelA.getNamings().singular,
             modelBId,
-            where,
+            listFindQuery,
             context,
         )
     }
 
     // when joining data from modelA to modelB, the relationship is save at modelB datasource
-    public async joinModelB( modelAId: string, argument: Record< string, any >, context: any, where: Record<string, any> = undefined ) {
-        where = get( argument, `where`, {} )
-        where = WhereInputPlugin.parseWhereIterate( where, this.modelB )
+    public async joinModelB( modelAId: string, argument: Record< string, any >, context: any ) {
+        const listFindQuery: ListFindQuery = this.listFindQuery( argument )
         return await this.modelB.getDataSource().findManyFromManyRelation(
             this.modelA.getNamings().singular,
             this.modelB.getNamings().singular,
             modelAId,
-            where,
+            listFindQuery,
             context,
         )
+    }
+
+    public listFindQuery ( argument: Record< string, any > ): ListFindQuery {
+        let where = get( argument, `where`, {} )
+        let orderBy = get( argument, `orderBy`, {} )
+        where = WhereInputPlugin.parseWhereIterate( where, this.modelB )
+        orderBy = OrderInputPlugin.parseOrder( orderBy )
+        return { orderBy, where }
     }
 }

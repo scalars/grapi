@@ -1,4 +1,4 @@
-import { Operator, WhereInputPlugin } from '..'
+import { ListFindQuery, Operator, OrderInputPlugin, WhereInputPlugin } from '..'
 import { Model, RelationType } from '../dataModel'
 import { get, isEmpty } from '../lodash'
 import { InputRecursiveRelation } from './index'
@@ -119,10 +119,13 @@ export default class OneToMany implements Relation, WithForeignKey {
         await this.manySideModel.getDataSource().delete( { id: { [Operator.eq]: manySideId } }, context )
     }
 
-    public async joinManyOnOneSide( data: Record<string, any>, argument: any, context: any, where: Record<string, any> = undefined ): Promise<any[]> {
-        where = get( argument, `where`, {} )
+    public async joinManyOnOneSide( data: Record<string, any>, argument: Record<string, any>, context: any ): Promise<any[]> {
+        let where = get( argument, `where`, {} )
+        let orderBy = get( argument, `orderBy`, {} )
         where = WhereInputPlugin.parseWhereIterate( where, this.manySideModel )
-        return await this.manySideModel.getDataSource().findManyFromOneRelation( this.foreignKey, data.id, where, context )
+        orderBy = OrderInputPlugin.parseOrder( orderBy )
+        const listFindQuery: ListFindQuery = { orderBy, where: { ...where, [this.foreignKey]: { [Operator.eq]: data.id } } }
+        return await this.manySideModel.getDataSource().findManyFromOneRelation( listFindQuery, context )
     }
 
     public async joinOneOnManySide( data: Record<string, any>, context: any ): Promise<any> {

@@ -11,6 +11,20 @@ const enum OrderByEnum {
     DESC = 'DESC'
 }
 
+const parserOrder = ( order: Record<string, any> ) => {
+    if ( isEmpty( order ) === false ) {
+        return transform( order, ( result: OrderBy, value: OrderByEnum, fieldName: string  ) => {
+            if ( value === OrderByEnum.ASC ) {
+                result[fieldName] = 1
+            } else {
+                result[fieldName] = -1
+            }
+            return result
+        } )
+    }
+    return null
+}
+
 export default class OrderInputPlugin implements Plugin {
     public visitModel( model: Model, context: Context ): void {
         // object type model dont need whereInput
@@ -34,18 +48,12 @@ export default class OrderInputPlugin implements Plugin {
         return `${model.getNamings().capitalSingular}OrderInput`
     }
 
+    public static parseOrder( order: Record<string, OrderByEnum> ): OrderBy | null {
+        return parserOrder( order )
+    }
+
     public parseOrder( order: Record<string, OrderByEnum> ): OrderBy | null {
-        if ( isEmpty( order ) === false ) {
-            return transform( order, ( result: OrderBy, value: OrderByEnum, fieldName: string  ) => {
-                if ( value === OrderByEnum.ASC ) {
-                    result[fieldName] = 1
-                } else {
-                    result[fieldName] = -1
-                }
-                return result
-            } )
-        }
-        return null
+        return parserOrder( order )
     }
 
     private createOrderFilter( fields: Record<string, Field> ): string {

@@ -56,8 +56,9 @@ const recursiveCreateType = ( fields: Record<string, Field>, context: Context ):
                 // last: Int
                 // before: String
                 // after: String
-                // orderBy: ${relationNamings.capitalSingular}OrderInput
+
                 argumentsField = `(
+                    orderBy: ${relationNamings.capitalSingular}OrderInput
                     where: ${relationNamings.capitalSingular}WhereInput
                 )`
             }
