@@ -299,7 +299,7 @@ export class MongodbData {
                 filterQuery[field] = { $gte: value.from, $lte: value.to }
                 break
             case Operator.object:
-                filterQuery[field] = value
+                assign( filterQuery, value )
                 break
             }
         }
