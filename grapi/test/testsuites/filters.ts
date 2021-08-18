@@ -288,14 +288,14 @@ export function testSuits() {
           users( where: $where) { ${userFields} }
         }`
         let getUsersMarriedEqVariables: any = {
-            where: { skills_object: { $elemMatch:{ code: { $in:[ 'S03', 'S05' ] } } } }
+            where: { skills_object: { skills: { $elemMatch:{ code: { $in:[ 'S03', 'S05' ] } } } } }
         }
         let res = await ( this as any ).graphqlRequest( getUsersMarriedEq, getUsersMarriedEqVariables )
         expect( res.users ).with.lengthOf( 2 )
         expect( res.users[0] ).to.deep.includes( { name: 'Wout Beckers' } )
 
         getUsersMarriedEqVariables = {
-            where: { skills_object: { $elemMatch: { name: { $regex: '.*Data.*' } } } }
+            where: { skills_object: { skills: { $elemMatch: { name: { $regex: '.*Data.*' } } } } }
         }
         res = await ( this as any ).graphqlRequest( getUsersMarriedEq, getUsersMarriedEqVariables )
         expect( res.users ).with.lengthOf( 1 )

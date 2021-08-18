@@ -1,6 +1,6 @@
 {
   "name": "@scalars/grapi-mongodb",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "The mongodb package of Grapi",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
