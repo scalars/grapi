@@ -46,13 +46,21 @@ export const paginate = ( rows: any[], pagination?: Pagination ):
         transforms.push( takeRightWhile<any>( row => row.id !== after ) )
     }
 
-    if ( !isUndefined( first ) ) {
-        transforms.push( take( first ) )
-    }
+    transforms.push( function ( rows: any[] ) {
+        if ( first && last ) {
+            if ( first > rows.length ) {
+                const diff: number = first - rows.length
+                return diff < last ? takeRight( last - diff, rows ) : []
+            } else {
+                return takeRight( last, take( first, rows ) )
+            }
+        }
+        if ( first )
+            return take( first, rows )
+        if ( last )
+            return takeRight( last, rows )
+    } )
 
-    if ( !isUndefined( last ) ) {
-        transforms.push( takeRight( last ) )
-    }
     const data = flow( transforms )( rows )
 
     const firstRowId = get( _first( rows ), 'id' )
