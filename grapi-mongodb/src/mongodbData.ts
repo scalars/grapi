@@ -8,6 +8,7 @@ import {
     Mutation,
     Operator,
     OrderBy,
+    Pagination,
     RelationShip,
     RelationWhere,
     RelationWhereConfig,
@@ -43,15 +44,17 @@ export class MongodbData {
         this.collectionName = collectionName
     }
 
-    public async findInCollection( filterQuery: FilterQuery<any>, orderBy = {} ): Promise<any[]> {
+    public async findInCollection( filterQuery: FilterQuery<any>, orderBy = {}, pagination: Pagination = {} ): Promise<any[]> {
         return await this.db.collection( this.collectionName )
             .find( filterQuery )
             .sort( orderBy )
+            .skip( pagination.skip || 0 )
+            .limit( pagination.take || 0 )
             .project( { _id: 0 } )
             .toArray()
     }
 
-    public async findRecursive ( where: Record<string, any>, orderBy: OrderBy, data: any[] = [] ): Promise<any[]> {
+    public async findRecursive ( where: Record<string, any>, orderBy: OrderBy, pagination: Pagination, data: any[] = [] ): Promise<any[]> {
         let iteration: number = 0
         await iterateWhereFilter( where, async ( whereFilter: ( Record<string, RelationWhere> | Array<Record<string, RelationWhere>> ), operator: ( Operator | WhereOperator ) ) => {
             if ( operator as WhereOperator === WhereOperator.relation ) {
@@ -72,7 +75,7 @@ export class MongodbData {
                 if ( isEmpty( baseFilters ) === false || operator as any === WhereOperator.base || isEmpty( whereFilter ) ) {
                     const filters: any = isEmpty( baseFilters ) ? whereFilter : baseFilters
                     const filterQuery: FilterQuery<any> =  this.whereToFilterQuery( filters, operator as Operator )
-                    data = await this.findInCollection( filterQuery, orderBy )
+                    data = await this.findInCollection( filterQuery, orderBy, isEmpty( relationFilters ) ? pagination : {} )
                     iteration = iteration + 1
                 }
                 if ( isEmpty( relationFilters ) === false ) {

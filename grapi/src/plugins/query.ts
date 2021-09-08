@@ -12,7 +12,7 @@ const parsePaginationFromArgs = ( args: Record<string, any> ): any => {
         return null
     }
 
-    return pick( args, [ 'first', 'last', 'before', 'after' ] )
+    return pick( args, [ 'first', 'last', 'skip', 'take', 'before', 'after' ] )
 }
 
 export default class QueryPlugin implements Plugin {
@@ -57,6 +57,8 @@ export default class QueryPlugin implements Plugin {
             `where: ${whereInputName}`,
             `first: Int`,
             `last: Int`,
+            `skip: Int`,
+            `take: Int`,
             `before: String`,
             `after: String`,
             `orderBy: ${orderInputName}`
