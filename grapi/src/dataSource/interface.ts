@@ -10,6 +10,10 @@ export interface Pagination {
     // number based
     perPage?: number;
     page?: number;
+
+    // Offset based
+    take?: number;
+    skip?: number;
 }
 
 type PromiseOrScalar<T> = T | ( () => Promise<T> );

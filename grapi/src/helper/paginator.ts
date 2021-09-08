@@ -59,6 +59,7 @@ export const paginate = ( rows: any[], pagination?: Pagination ):
             return take( first, rows )
         if ( last )
             return takeRight( last, rows )
+        return rows
     } )
 
     const data = flow( transforms )( rows )
