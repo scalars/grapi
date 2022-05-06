@@ -9,11 +9,7 @@
 ## MongoDB Data-Source
 
 ```shell
-yarn add @scalars/grapi-mongodb
-```
-Or
-```shell
-npm install @scalars/grapi-mongodb
+yarn add @grapi/mongodb
 ```
 
 ```graphql
@@ -42,8 +38,8 @@ type Vehicle @Model( dataSource: "datasource", key: "Vehicle" ) {
 // server.ts
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { MongodbDataSourceGroup } from '@scalars/grapi-mongodb'
-import { Grapi } from '@scalars/grapi'
+import { MongodbDataSourceGroup } from '@grapi/mongodb'
+import { Grapi } from '@grapi/server'
 import { ApolloServer } from 'apollo-server'
 
 const getDataSource = async () => {

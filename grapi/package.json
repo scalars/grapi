@@ -1,6 +1,6 @@
 {
-  "name": "@scalars/grapi",
-  "version": "2.2.3",
+  "name": "@grapi/server",
+  "version": "2.2.4",
   "description": "Grapi Schema Generator For GraphQL Server",
   "keywords": [
     "grapi",

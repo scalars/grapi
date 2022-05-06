@@ -11,11 +11,7 @@
 
 ## Installation
 ``` shell
-yarn add @scalars/grapi
-```
-Or
-``` shell
-npm install @scalars/grapi
+yarn add @grapi/server
 ```
 
 ## Features
@@ -42,7 +38,7 @@ type Actor @Model( dataSource: "datasource", key: "Actor" ) {
 **Grapi for Typescript**
 ```shell
 yarn init
-yarn add @scalars/grapi @scalars/grapi-mongodb
+yarn add @grapi/server @grapi/mongodb
 yarn add ts-node apollo-server 
 yarn add -D typescript
 ```
@@ -51,8 +47,8 @@ yarn add -D typescript
 // server.ts
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { MongodbDataSourceGroup } from '@scalars/grapi-mongodb'
-import { Grapi } from '@scalars/grapi'
+import { MongodbDataSourceGroup } from '@grapi/mongodb'
+import { Grapi } from '@grapi/server'
 import { ApolloServer } from 'apollo-server'
 
 const getDataSource = async () => {
@@ -90,7 +86,7 @@ yarn ts-node server.ts
 **Grapi for JavaScript**
 ```shell
 yarn init
-yarn add @scalars/grapi @scalars/grapi-mongodb
+yarn add @grapi/server @grapi/mongodb
 yarn add apollo-server
 ```
 
@@ -98,8 +94,8 @@ yarn add apollo-server
 // server.js
 const { readFileSync } = require( 'fs' )
 const { resolve } = require( 'path' )
-const { MongodbDataSourceGroup } = require( '@scalars/grapi-mongodb' )
-const { Grapi } = require( '@scalars/grapi' )
+const { MongodbDataSourceGroup } = require( '@grapi/mongodb' )
+const { Grapi } = require( '@grapi/server' )
 const { ApolloServer } = require( 'apollo-server' )
 
 const getDataSource = async () => {
