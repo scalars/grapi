@@ -22,7 +22,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
     public async find( args?: ListFindQuery ): Promise<PaginatedResponse> {
         // TODO Make orderBy better, admit multiple order
         const { pagination, where, orderBy = {} } = args || {} as any
-        const data: any[] = await this.findRecursive( where, orderBy )
+        const data: any[] = await this.findRecursive( where, orderBy, pagination )
         return paginate( data, pagination )
     }
 
@@ -97,7 +97,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
 
     // OneToManyRelation
     public async findManyFromOneRelation( { where, orderBy }: ListFindQuery ): Promise<any[]> {
-        return await this.findRecursive( where, orderBy )
+        return await this.findRecursive( where, orderBy, {} )
     }
 
     // ManyToManyRelation
@@ -110,7 +110,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         const relationTableName = `_${sourceSideName}_${targetSideName}`
         const relationData = await this.db.collection( relationTableName ).findOne( { sourceSideId } )
         const relationIds = get( relationData, `targetSideIds`, [] )
-        return await this.findRecursive( { ...where, id: { [Operator.in]: relationIds } }, orderBy )
+        return await this.findRecursive( { ...where, id: { [Operator.in]: relationIds } }, orderBy, {} )
     }
 
     public async addIdToManyRelation(
