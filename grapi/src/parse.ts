@@ -116,8 +116,10 @@ export const createDataFieldFromSdlField = (
 
 const parseRelationConfig = ( sdlObjectType: SdlObjectType ): Record<string, any> => {
     // parse `type AdminRelation implements Relation @config(name: "name" foreignKey: "key")`
-    return mapValues( get( sdlObjectType.getDirectives(), 'config.args' ),
-        ( inputValue: InputValue ) => inputValue.getValue() )
+    return mapValues(
+        get( sdlObjectType.getDirectives(), 'config.args' ),
+        ( inputValue: InputValue ) => inputValue.getValue()
+    )
 }
 
 export const createDataModelFromSdlObjectType = (
@@ -139,24 +141,21 @@ export const createDataModelFromSdlObjectType = (
     return model
 }
 
-// use sdlParser to parse sdl to Model & RootNode
-// eslint-disable-next-line max-lines-per-function
-export const parse = ( sdl: string ): { rootNode: RootNode; models: Model[] } => {
-    const parser = new SdlParser()
-    const sdlNamedTypes: SdlNamedType[] = parser.parse( sdl )
-    const rootNode = new RootNode()
-    const namedTypes: Record<string, NamedType> = {}
-    const models: Record<string, Model> = {}
+const parseSdlNameTypes = (
+    sdlNamedTypes: SdlNamedType[],
+    models: Record<string, Model>,
+    rootNode: RootNode
+) => {
+
     const relationConfigMap: Record<string, Record<string, any>> = {}
+    const namedTypes: Record<string, NamedType> = {}
     const getModel = ( name: string ): Model => {
         return models[name]
     }
     const getNamedType = ( name: string ): NamedType => {
         return namedTypes[name]
     }
-
     const getRelationConfig = ( name: string ): Record<string, Record<string, any>> => relationConfigMap[name]
-
     sdlNamedTypes.forEach( ( sdlNamedType: SdlNamedType ) => {
         const name = sdlNamedType.getName()
 
@@ -202,19 +201,23 @@ export const parse = ( sdl: string ): { rootNode: RootNode; models: Model[] } =>
             relationConfigMap[name] = parseRelationConfig( sdlNamedType )
         }
     } )
+}
+
+// use sdlParser to parse sdl to Model & RootNode
+// eslint-disable-next-line max-lines-per-function
+export const parse = ( sdl: string ): { rootNode: RootNode; models: Model[] } => {
+    const parser = new SdlParser()
+    const sdlNamedTypes: SdlNamedType[] = parser.parse( sdl )
+    const rootNode = new RootNode()
+    const models: Record<string, Model> = {}
+
+    parseSdlNameTypes( sdlNamedTypes, models, rootNode )
 
     // go through middlewares
     const middlewares: SdlMiddleware[] = [
         new BasicFieldMiddware(),
         new MetadataMiddleware(),
     ]
-
-    // visit objectType
-    forEach( namedTypes, namedType => {
-        if ( namedType instanceof SdlObjectType ) {
-            middlewares.forEach( mid => mid.visitObjectType && mid.visitObjectType( namedType ) )
-        }
-    } )
 
     // visit model & fields
     forEach( models, ( model, key ) => {
