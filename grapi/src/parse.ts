@@ -42,25 +42,18 @@ const isRelationType = ( sdlObjectType: SdlObjectType ): boolean => {
 }
 
 export const parseDataModelScalarType = ( field: SdlField ): DataModelType => {
-    switch ( field.getTypeName() ) {
-    case GraphQLString.name:
-        return DataModelType.STRING
-
-    case GraphQLInt.name:
-        return DataModelType.INT
-
-    case GraphQLFloat.name:
-        return DataModelType.FLOAT
-
-    case GraphQLBoolean.name:
-        return DataModelType.BOOLEAN
-
-    case GraphQLID.name:
-        return DataModelType.ID
-
-    default:
+    const scalarTypes = {
+        [GraphQLString.name]: DataModelType.STRING,
+        [GraphQLInt.name]: DataModelType.INT,
+        [GraphQLFloat.name]: DataModelType.FLOAT,
+        [GraphQLBoolean.name]: DataModelType.BOOLEAN,
+        [GraphQLID.name]: DataModelType.ID
+    }
+    const scalarType: DataModelType = scalarTypes[field.getTypeName()]
+    if ( !scalarTypes ) {
         throw new Error( `cant parse dataModel type for field type: ${field.getTypeName()}` )
     }
+    return scalarType
 }
 
 export const createDataFieldFromSdlField = (
@@ -74,50 +67,51 @@ export const createDataFieldFromSdlField = (
         list: field.isList(),
         nonNullItem: field.isItemNonNull(),
     }
-    switch ( field.getFieldType() ) {
-    case SdlFieldType.SCALAR:
-        return new DataScalarField( {
-            type: parseDataModelScalarType( field ),
-            ...fieldMeta,
-        } )
-
-    case SdlFieldType.CUSTOM_SCALAR:
-        return new DataCustomScalarField( {
-            typename: field.getTypeName(),
-            ...fieldMeta,
-        } )
-
-    case SdlFieldType.ENUM:
-        return new DataEnumField( {
-            enumType: (): EnumType => getNamedType( field.getTypeName() ) as EnumType,
-            ...fieldMeta,
-        } )
-
-    case SdlFieldType.OBJECT:
-        // eslint-disable-next-line no-case-declarations
-        const objectField = field as SdlObjectField
-        if ( isGrapiDataModel( objectField.getObjectType() ) ) {
-            const relationWith: string = get( objectField.getDirective( RELATION_DIRECTIVE_NAME ), `${ RELATION_ARGS }.${RELATION_WITH}.${ RELATION_VALUE }` )
-            const relationConfig: Record<string, any> = mapValues( getRelationConfig( relationWith ), ( value ) => {
-                if ( value instanceof Object ) {
-                    return mapValues( value, ( data ) => {
-                        return get( data, `value`, data )
-                    } )
-                }
-                return value
-            } )
-            return new DataRelationField( {
-                relationTo: (): Model => getModel( objectField.getTypeName() ),
-                relationConfig: relationWith === undefined ? null : (): Record<string, any> => relationConfig,
+    const sdlFieldTypes = {
+        [SdlFieldType.SCALAR]: () => {
+            return new DataScalarField( {
+                type: parseDataModelScalarType( field ),
                 ...fieldMeta,
             } )
-        } else {
-            return new DataObjectField( {
-                objectType: (): ObjectType => getNamedType( field.getTypeName() ) as ObjectType,
+        },
+        [SdlFieldType.CUSTOM_SCALAR]: () => {
+            return new DataCustomScalarField( {
+                typename: field.getTypeName(),
                 ...fieldMeta,
             } )
+        },
+        [SdlFieldType.ENUM]: () => {
+            return new DataEnumField( {
+                enumType: (): EnumType => getNamedType( field.getTypeName() ) as EnumType,
+                ...fieldMeta,
+            } )
+        },
+        [SdlFieldType.OBJECT]: () => {
+            const objectField = field as SdlObjectField
+            if ( isGrapiDataModel( objectField.getObjectType() ) ) {
+                const relationWith: string = get( objectField.getDirective( RELATION_DIRECTIVE_NAME ), `${ RELATION_ARGS }.${RELATION_WITH}.${ RELATION_VALUE }` )
+                const relationConfig: Record<string, any> = mapValues( getRelationConfig( relationWith ), ( value ) => {
+                    if ( value instanceof Object ) {
+                        return mapValues( value, ( data ) => {
+                            return get( data, `value`, data )
+                        } )
+                    }
+                    return value
+                } )
+                return new DataRelationField( {
+                    relationTo: (): Model => getModel( objectField.getTypeName() ),
+                    relationConfig: relationWith === undefined ? null : (): Record<string, any> => relationConfig,
+                    ...fieldMeta,
+                } )
+            } else {
+                return new DataObjectField( {
+                    objectType: (): ObjectType => getNamedType( field.getTypeName() ) as ObjectType,
+                    ...fieldMeta,
+                } )
+            }
         }
     }
+    return sdlFieldTypes[field.getFieldType()]()
 }
 
 const parseRelationConfig = ( sdlObjectType: SdlObjectType ): Record<string, any> => {
