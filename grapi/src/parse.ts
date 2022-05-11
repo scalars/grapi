@@ -2,7 +2,6 @@ import { GraphQLBoolean, GraphQLFloat, GraphQLID, GraphQLInt, GraphQLString } fr
 
 import {
     MODEL_DIRECTIVE,
-    OBJECT_DIRECTIVE,
     RELATION_ARGS,
     RELATION_DIRECTIVE_NAME,
     RELATION_INTERFACE_NAME, RELATION_VALUE, RELATION_WITH,
@@ -30,11 +29,7 @@ import { SdlNamedType } from './sdlParser/namedType/interface'
 import { parseDefinitionNodeToSdl, SdlParser } from './sdlParser/parser'
 
 const isGrapiDataModel = ( sdlNamedType: SdlNamedType ): boolean => {
-    return Boolean( sdlNamedType.getDirectives()[MODEL_DIRECTIVE] )
-}
-
-const isGrapiDataObject = ( sdlNamedType: SdlNamedType ): boolean => {
-    return Boolean( sdlNamedType.getDirectives()[OBJECT_DIRECTIVE] )
+    return Boolean( ( sdlNamedType.getDirectives() || {} ) [MODEL_DIRECTIVE] )
 }
 
 const isRelationType = ( sdlObjectType: SdlObjectType ): boolean => {
@@ -60,7 +55,7 @@ export const createDataFieldFromSdlField = (
     field: SdlField,
     getModel: ( name: string ) => Model,
     getNamedType: ( name: string ) => NamedType,
-    getRelationConfig: ( name: string ) => Record<string, any>,
+    getRelationConfig: ( name: string ) => Record<string, unknown>,
 ): DataScalarField | DataCustomScalarField | DataEnumField | DataRelationField | DataObjectField => {
     const fieldMeta = {
         nonNull: field.isNonNull(),
@@ -90,7 +85,7 @@ export const createDataFieldFromSdlField = (
             const objectField = field as SdlObjectField
             if ( isGrapiDataModel( objectField.getObjectType() ) ) {
                 const relationWith: string = get( objectField.getDirective( RELATION_DIRECTIVE_NAME ), `${ RELATION_ARGS }.${RELATION_WITH}.${ RELATION_VALUE }` )
-                const relationConfig: Record<string, any> = mapValues( getRelationConfig( relationWith ), ( value ) => {
+                const relationConfig: Record<string, unknown> = mapValues( getRelationConfig( relationWith ), ( value ) => {
                     if ( value instanceof Object ) {
                         return mapValues( value, ( data ) => {
                             return get( data, `value`, data )
@@ -100,7 +95,7 @@ export const createDataFieldFromSdlField = (
                 } )
                 return new DataRelationField( {
                     relationTo: (): Model => getModel( objectField.getTypeName() ),
-                    relationConfig: relationWith === undefined ? null : (): Record<string, any> => relationConfig,
+                    relationConfig: relationWith === undefined ? null : (): Record<string, unknown> => relationConfig,
                     ...fieldMeta,
                 } )
             } else {
@@ -114,7 +109,7 @@ export const createDataFieldFromSdlField = (
     return sdlFieldTypes[field.getFieldType()]()
 }
 
-const parseRelationConfig = ( sdlObjectType: SdlObjectType ): Record<string, any> => {
+const parseRelationConfig = ( sdlObjectType: SdlObjectType ): Record<string, unknown> => {
     // parse `type AdminRelation implements Relation @config(name: "name" foreignKey: "key")`
     return mapValues(
         get( sdlObjectType.getDirectives(), 'config.args' ),
@@ -126,12 +121,10 @@ export const createDataModelFromSdlObjectType = (
     sdlObjectType: SdlObjectType,
     getModel: ( name: string ) => Model,
     getNamedType: ( name: string ) => NamedType,
-    getRelationConfig: ( name: string ) => Record<string, any>,
-    isObject: boolean,
+    getRelationConfig: ( name: string ) => Record<string, unknown>,
 ): Model => {
     const model = new Model( {
         name: sdlObjectType.getName(),
-        isObject,
     } )
 
     // append fields
@@ -147,7 +140,7 @@ const parseSdlNameTypes = (
     rootNode: RootNode
 ) => {
 
-    const relationConfigMap: Record<string, Record<string, any>> = {}
+    const relationConfigMap: Record<string, Record<string, unknown>> = {}
     const namedTypes: Record<string, NamedType> = {}
     const getModel = ( name: string ): Model => {
         return models[name]
@@ -155,13 +148,13 @@ const parseSdlNameTypes = (
     const getNamedType = ( name: string ): NamedType => {
         return namedTypes[name]
     }
-    const getRelationConfig = ( name: string ): Record<string, Record<string, any>> => relationConfigMap[name]
+    const getRelationConfig = ( name: string ): Record<string, unknown> => relationConfigMap[name]
     sdlNamedTypes.forEach( ( sdlNamedType: SdlNamedType ) => {
         const name = sdlNamedType.getName()
 
         // directive definition
         if ( sdlNamedType instanceof SdlDirectiveType ) {
-            rootNode.addSdl( parseDefinitionNodeToSdl( sdlNamedType.getTypeDef() as any ), false )
+            rootNode.addSdl( parseDefinitionNodeToSdl( sdlNamedType.getTypeDef() ), false )
         }
 
         // enum type
@@ -173,12 +166,16 @@ const parseSdlNameTypes = (
                 description: sdlNamedType.getDescription()
             } )
             namedTypes[name] = enumType
+            // TODO Validate just this call, all others invocations are wrong
             rootNode.addEnum( enumType )
         }
 
         // object type
         // not Model & RelationType
-        if ( sdlNamedType instanceof SdlObjectType && !isGrapiDataModel( sdlNamedType ) && !isRelationType( sdlNamedType ) ) {
+        const isSdlObjectType = sdlNamedType instanceof SdlObjectType
+        const isModel = isGrapiDataModel( sdlNamedType )
+        const isRelation = isSdlObjectType && isRelationType( sdlNamedType as SdlObjectType )
+        if ( isSdlObjectType && !isModel && !isRelation ) {
             const objectType = new ObjectType( {
                 name,
                 fields: mapValues( sdlNamedType.getFields(), sdlField => {
@@ -189,14 +186,13 @@ const parseSdlNameTypes = (
             rootNode.addObjectType( objectType )
         }
 
-        // Model || Object
-        if ( sdlNamedType instanceof SdlObjectType && ( isGrapiDataModel( sdlNamedType ) || isGrapiDataObject( sdlNamedType ) ) ) {
-            const isObject = isGrapiDataObject( sdlNamedType )
-            models[name] = createDataModelFromSdlObjectType( sdlNamedType, getModel, getNamedType, getRelationConfig, isObject )
+        // Model
+        if ( isSdlObjectType && isModel ) {
+            models[name] = createDataModelFromSdlObjectType( sdlNamedType, getModel, getNamedType, getRelationConfig )
         }
 
         // RelationType
-        if ( sdlNamedType instanceof SdlObjectType && isRelationType( sdlNamedType ) ) {
+        if ( isSdlObjectType && isRelation ) {
             // parse arguments to relation config
             relationConfigMap[name] = parseRelationConfig( sdlNamedType )
         }

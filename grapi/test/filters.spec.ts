@@ -53,7 +53,7 @@ const data = [
 ]
 
 const importData = async () => {
-    const client = await MongoClient.connect( mongoUri, { useUnifiedTopology: true } )
+    const client = await MongoClient.connect( mongoUri )
     const db = await client.db( DB_NAME )
     const collection = await db.collection( COLLECTION_NAME )
     await collection.insertMany( data )
