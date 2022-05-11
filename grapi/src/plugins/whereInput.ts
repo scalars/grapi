@@ -156,9 +156,11 @@ export default class WhereInputPlugin implements Plugin {
         return { fieldName, operator: validOperator }
     }
 
+    // eslint-disable-next-line max-lines-per-function
     private createWhereFilter( root: RootNode, fields: Record<string, Field> ): string {
         // create equals on scalar fields
         let inputFields: Array<{fieldName: string; type: string}> = []
+        // eslint-disable-next-line max-lines-per-function
         forEach( fields, ( field, name ) => {
             const typeName: string = field.getTypename()
             if ( field.isList() ) {

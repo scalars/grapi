@@ -14,8 +14,8 @@ import {
     RelationWhereConfig,
     Where,
     WhereOperator
-} from '@scalars/grapi'
-import { FilterListObject } from '@scalars/grapi/lib/dataModel/type'
+} from '@grapi/server'
+import { FilterListObject } from '@grapi/server/lib/dataModel/type'
 import { Db, FilterQuery } from 'mongodb'
 
 import {
@@ -114,8 +114,10 @@ export class MongodbData {
         return data
     }
 
+    // eslint-disable-next-line max-lines-per-function
     public async executeRelationFilters( where: Record<string, RelationWhere>, data: any[], filtered: any[] = [] ): Promise<any[]> {
         for ( const item of data ) {
+            // eslint-disable-next-line max-lines-per-function
             const filter: boolean = await iterateRelationsWhere( where,  async ( relationWhere: RelationWhere ): Promise<boolean> => {
                 const relation: RelationWhereConfig = relationWhere.relation
                 const relations: Record<string, RelationWhere> = {}

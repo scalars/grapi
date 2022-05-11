@@ -140,6 +140,7 @@ export const createDataModelFromSdlObjectType = (
 }
 
 // use sdlParser to parse sdl to Model & RootNode
+// eslint-disable-next-line max-lines-per-function
 export const parse = ( sdl: string ): { rootNode: RootNode; models: Model[] } => {
     const parser = new SdlParser()
     const sdlNamedTypes: SdlNamedType[] = parser.parse( sdl )

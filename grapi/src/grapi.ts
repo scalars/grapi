@@ -82,9 +82,11 @@ export class Grapi {
         this.createServerConfig()
     }
 
+    // eslint-disable-next-line max-lines-per-function
     private createServerConfig() {
         const ifSkipPrint = get( this, 'skipPrint', false )
         if ( !ifSkipPrint ) {
+            // eslint-disable-next-line no-console
             console.log( chalk.magenta( `Starting Grapi...\n` ) )
         }
 

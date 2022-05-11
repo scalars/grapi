@@ -26,31 +26,46 @@
                 "minProperties": 3
             }
         }],
+        "no-useless-escape": "off",
+        "no-console": [ "error", { "allow": [ "error" ] } ],
+        "no-tabs": "off",
+        "no-mixed-spaces-and-tabs": "error",
+        "semi": [ 2, "never" ],
+        "@typescript-eslint/no-unused-vars": [ "error", { "argsIgnorePattern": "^_" } ],
         "@typescript-eslint/restrict-plus-operands": "error",
-        "@typescript-eslint/ban-types": "warn",
+        "@typescript-eslint/ban-ts-ignore": "off",
+        "@typescript-eslint/ban-types": "off",
         "@typescript-eslint/no-inferrable-types": "off",
-        "@typescript-eslint/no-explicit-any": "off",
-        "@typescript-eslint/no-unused-vars": "error",
-        "@typescript-eslint/explicit-module-boundary-types": "off",
-        "@typescript-eslint/indent": ["error", 4, {
-            "FunctionDeclaration": {"parameters": "first"},
-            "FunctionExpression": {"parameters": "first"}
-        }],
-        "@typescript-eslint/no-use-before-define": ["error", {
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/indent": [ "error", 4, {
+            "FunctionDeclaration": { "parameters": "first" },
+            "FunctionExpression": { "parameters": "first" }
+        } ],
+        "@typescript-eslint/type-annotation-spacing": "error",
+        "@typescript-eslint/no-use-before-define": [ "error", {
             "variables": true,
             "functions": true
-        }],
-        "no-case-declarations": "off",
-        "quotes": ["error", "single", {
+        } ],
+        "quotes": [ "error", "single", {
             "allowTemplateLiterals": true
-        }],
-        "semi": [ "error", "never" ],
-        "camelcase": "off",
+        } ],
         "array-bracket-spacing": [ "error", "always" ],
-        "comma-spacing": ["error", { "before": false, "after": true } ],
+        "comma-spacing": [ "error", { "before": false, "after": true } ],
         "object-curly-spacing": [ "error", "always" ],
         "block-spacing": [ "error", "always" ],
         "space-in-parens": [ "error", "always" ],
+        "max-lines": [ "error", { "max": 500, "skipBlankLines": true, "skipComments": true } ],
+        "max-lines-per-function": [ "error", 70 ],
         "space-infix-ops": [ "error", { "int32Hint": true } ]
-    }
+    },
+    "overrides": [
+        {
+            "files": ["**/*.spec.ts", "**/testsuites/*"],
+            "rules": {
+                "@typescript-eslint/no-explicit-any": "off",
+                "max-lines": "off",
+                "max-lines-per-function": "off"
+            }
+        }
+    ]
 }

@@ -5,6 +5,7 @@ import { OneToManyRelation } from '../relation'
 import { findUniqueObjectsOnModel, relationForeignKey } from './index'
 import { Hook } from './interface'
 
+// eslint-disable-next-line max-lines-per-function
 export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> => {
     const relationImpl: OneToManyRelation = new OneToManyRelation( {
         oneSideModel: relation.source,

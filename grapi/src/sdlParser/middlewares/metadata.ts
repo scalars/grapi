@@ -20,9 +20,9 @@ export default class MetadataMiddleware implements SdlMiddleware {
     }
 
     public visitField( {
-        model,
+        // model,
         field,
-        sdlObjectType,
+        // sdlObjectType,
         sdlField,
     }: {
         model: Model;

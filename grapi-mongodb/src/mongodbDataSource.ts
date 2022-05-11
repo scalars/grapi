@@ -6,7 +6,7 @@ import {
     paginate,
     PaginatedResponse,
     Where
-} from '@scalars/grapi'
+} from '@grapi/server'
 import { Db, ObjectId } from 'mongodb'
 
 import { get, isEmpty } from './lodash'

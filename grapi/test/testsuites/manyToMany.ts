@@ -80,7 +80,7 @@ const fakeUserData = ( data?: any ) => {
 
 export const sdl = readFileSync( path.resolve( __dirname, '../fixtures/manyToMany.graphql' ), { encoding: 'utf8' } )
 
-export function testSuits() {
+export function testSuits(): void {
     it( 'should create unconnected item with bi-*-to-* from one side', async () => {
         const createGroupQuery = `
       mutation ($data: GroupCreateInput!) {

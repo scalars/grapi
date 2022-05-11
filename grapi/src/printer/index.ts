@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import chalk from 'chalk'
 
 import { Field, Model, ModelRelation, RelationField, RelationType } from '../dataModel'
