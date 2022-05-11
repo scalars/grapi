@@ -12,7 +12,7 @@ export default class RootNode {
     private typeDefMutation: string = ``;
 
     // query could be queryName(args): type, or a GraphQLFieldConfig
-    public addQuery( query: string | {name: string; field: () => GraphQLFieldConfig<any, any>} ): void {
+    public addQuery( query: string ): void {
         if ( isString( query ) ) {
             if ( !RootNode.findInSdl( query, this.typeDefQuery ) ) {
                 this.typeDefQuery = this.typeDefQuery.concat( ...[ `\n`, query ] )
@@ -42,7 +42,7 @@ export default class RootNode {
         this.addSdl( enumDef as string, true, description )
     }
 
-    public addSdl( sdl: string, validate: boolean = true, description: string = undefined ) {
+    public addSdl( sdl: string, validate: boolean = true, description: string = undefined ): void {
         if ( isString( sdl ) ) {
             if ( ! validate || ! RootNode.findInSdl( sdl, this.typeDef ) ) {
                 this.typeDef = this.typeDef.concat(
@@ -52,19 +52,14 @@ export default class RootNode {
         }
     }
 
-    public print(): any {
+    public print(): string {
         return this.typeDef.concat( this.addQueriesAndMutations() )
     }
 
     private addQueriesAndMutations(): string {
-        let typeDef: string = ``
-        if ( this.typeDefMutation ) {
-            typeDef = typeDef.concat( `type Query { ${ this.typeDefQuery } } ` )
-        }
-        if ( this.typeDefMutation ) {
-            typeDef = typeDef.concat( `type Mutation { ${ this.typeDefMutation } } ` )
-        }
-        return typeDef
+        return ``
+            .concat( this.typeDefQuery ? `type Query { ${ this.typeDefQuery } } ` : `` )
+            .concat( this.typeDefMutation ? `type Mutation { ${ this.typeDefMutation } } ` : `` )
     }
 
     private static findInSdl ( sdlToAdd: string, sdlActual: string ): boolean {

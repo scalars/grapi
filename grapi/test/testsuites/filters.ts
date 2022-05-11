@@ -1,10 +1,8 @@
 import chai from 'chai'
 import chaiSubset from 'chai-subset'
-// import faker from 'faker';
 import { readFileSync } from 'fs'
 import { some } from 'lodash'
 import path from 'path'
-// import { wrapSetToArrayField } from './utils';
 chai.use( chaiSubset )
 const expect = chai.expect
 
@@ -20,7 +18,7 @@ const userFields = `
 
 export const sdl = readFileSync( path.resolve( __dirname, '../fixtures/filters.graphql' ), { encoding: 'utf8' } )
 
-export function testSuits() {
+export function testSuits(): void {
 
     it( 'Boolean: should pass `eq` and `neq` filters', async ()  => {
         const getUsersMarriedEq = `
