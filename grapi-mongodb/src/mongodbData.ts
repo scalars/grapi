@@ -44,6 +44,10 @@ export class MongodbData {
         this.collectionName = collectionName
     }
 
+    public async findOneInCollection( filterQuery: FilterQuery<any> ): Promise<any[]> {
+        return await this.db.collection( this.collectionName ).findOne( filterQuery )
+    }
+
     public async findInCollection( filterQuery: FilterQuery<any>, orderBy = {}, pagination: Pagination = {} ): Promise<any[]> {
         return await this.db.collection( this.collectionName )
             .find( filterQuery )
