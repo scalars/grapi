@@ -1,16 +1,15 @@
 import {
     DataSource,
-    filter,
     ListFindQuery,
     Mutation,
     Operator,
     paginate,
     PaginatedResponse,
     Where
-} from '@scalars/grapi'
+} from '@grapi/server'
 import { Db, ObjectId } from 'mongodb'
 
-import { first, get, isEmpty } from './lodash'
+import { get, isEmpty } from './lodash'
 import { MongodbData } from './mongodbData'
 
 export class MongodbDataSource extends MongodbData implements DataSource {
@@ -27,16 +26,11 @@ export class MongodbDataSource extends MongodbData implements DataSource {
     }
 
     public async findOne( { where }: { where: Where } ): Promise<any> {
-        const filterQuery = this.whereToFilterQuery( where )
-        // TODO Review if findOne is better
-        const filteredData = await this.findInCollection( filterQuery )
-        return first( filteredData )
+        return await this.findOneInCollection( this.whereToFilterQuery( where ) )
     }
 
     public async findOneById( id: string ): Promise<any> {
-        const filteredData = await this.findInCollection( { id } )
-
-        return first( filteredData )
+        return await this.findOneInCollection( this.whereToFilterQuery( { id: { [Operator.eq]: id } } ) )
     }
 
     public async create( mutation: Mutation ): Promise<any> {
@@ -76,23 +70,21 @@ export class MongodbDataSource extends MongodbData implements DataSource {
 
     // ToOneRelation
     public async findOneByRelation( foreignKey: string, foreignId: string ): Promise<any> {
-        // TODO Review if filter direct in mongo is Better
-        const data =  await this.findInCollection( { } )
-        return first( filter( data, { [foreignKey]: { [Operator.eq]: foreignId } } ) )
+        return await this.findOneInCollection( { [foreignKey]: foreignId } )
     }
 
     // ToOneRelation
     public async updateOneRelation( id: string, foreignKey: string, foreignId: string ): Promise<any> {
-        // remove oldOwner foreignKey
-        await this.db.collection( this.collectionName ).updateOne(
-            { [foreignKey]: foreignId },
-            { $unset: { [foreignKey]: '' } },
-        )
-        // add foreignKey to  newOwner
-        await this.db.collection( this.collectionName ).updateOne(
-            { id },
-            { $set: { [foreignKey]: foreignId } },
-        )
+        await Promise.all( [
+            this.db.collection( this.collectionName ).updateOne(
+                { [foreignKey]: foreignId },
+                { $unset: { [foreignKey]: '' } },
+            ),
+            this.db.collection( this.collectionName ).updateOne(
+                { id },
+                { $set: { [foreignKey]: foreignId } },
+            )
+        ] )
     }
 
     // OneToManyRelation

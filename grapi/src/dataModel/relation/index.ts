@@ -58,6 +58,7 @@ const configRelationFields = (
     configRelationField( targetField, relationType, relationTarget )
 }
 
+// eslint-disable-next-line max-lines-per-function
 export const createRelation = ( models: Model[] ): ModelRelation[] => {
     const findModel = ( name: string ): Model => models.find( model => model.getName() === name )
     // final return of this function
@@ -176,10 +177,13 @@ export const createRelation = ( models: Model[] ): ModelRelation[] => {
     } )
 
     // construct mutual relation from relation table
+    // eslint-disable-next-line max-lines-per-function
     forEach( relationTable, ( toRelationMap, fromModelName ) => {
+        // eslint-disable-next-line max-lines-per-function
         forEach( toRelationMap, ( fields, toModelName ) => {
             const otherSideFields: RelationTableField[] =
                 get( relationTable, [ toModelName, fromModelName ] )
+            // eslint-disable-next-line max-lines-per-function
             fields.forEach( ( { type, field, fieldName, built } ) => {
                 // build relation already skip it
                 if ( built ) {

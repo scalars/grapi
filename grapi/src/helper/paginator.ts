@@ -2,8 +2,13 @@ import { Pagination } from '..'
 import { flow, slice, take, takeRight, takeRightWhile, takeWhile } from '../lodash'
 import { first as _first, get, isEmpty, isNil, isUndefined, last as _last } from '../lodash'
 
-export const paginate = ( rows: any[], pagination?: Pagination ):
-{data: any[]; total: number; hasNextPage: boolean; hasPreviousPage: boolean} => {
+// eslint-disable-next-line max-lines-per-function
+export const paginate = ( rows: any[], pagination?: Pagination ): {
+    data: any[];
+    total: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean
+} => {
     if ( isEmpty( pagination ) || isEmpty( rows ) ) {
         return {
             data: rows,

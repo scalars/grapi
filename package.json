@@ -8,11 +8,10 @@
   "scripts": {
     "compile": "yarn tsc --build tsconfig.build.json",
     "clean": "lerna run clean --stream --parallel",
-    "build": "lerna run build --stream --parallel",
+    "build": "lerna run build --stream",
     "lint": "yarn eslint --ext .ts .",
-    "test": "lerna run test --stream --scope @scalars/grapi",
+    "test": "lerna run test --stream --scope @grapi/server -- --colors",
     "test:scope": "lerna run test --stream --parallel --scope $SCOPE -- --colors",
-    "test:grep": "lerna run test:grep --stream --parallel --scope $SCOPE -- $FILE --colors ",
     "postinstall": "yarn run compile"
   },
   "devDependencies": {

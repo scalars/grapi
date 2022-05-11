@@ -57,7 +57,7 @@ export default class DeletePlugin implements Plugin {
                 // wrap
                 const deleteContext: DeleteContext = { where: args.where, response: {}, graphqlContext: context }
                 // _ context find a usage
-                await wrapDelete( deleteContext, async _ => {
+                await wrapDelete( deleteContext, async () => {
                     await dataSource.delete( whereUnique, context )
                 } )
                 return object

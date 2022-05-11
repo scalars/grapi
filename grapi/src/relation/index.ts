@@ -1,6 +1,6 @@
+import { Operator } from '..'
 import { Field, Model, RelationField, RelationType } from '../dataModel'
 import { DataModelType } from '../dataModel/type'
-import { Operator } from '../dataSource/interface'
 import { findUniqueObjectOnModel, findUniqueObjectsOnModel } from '../hooks'
 import { forEach, intersection, isEmpty, keys, map, omit } from '../lodash'
 
@@ -9,12 +9,13 @@ export { default as ManyToManyRelation } from './manyToMany'
 export { default as OneToManyRelation } from './oneToMany'
 export { default as UniToOneRelation } from './uniToOne'
 
-export const InputMultipleFields = ( fieldOne, fieldTo, fieldName ) => {
+export const InputMultipleFields = ( fieldOne, fieldTo, fieldName ): void => {
     if ( ! isEmpty( fieldOne ) && ! isEmpty( fieldTo ) ) {
         throw new Error( `There can be only one input field named ${ fieldName }` )
     }
 }
 
+// eslint-disable-next-line max-lines-per-function
 export const InputRecursiveRelation = async (
     rootData,
     nextRelation: Model,
@@ -38,6 +39,7 @@ export const InputRecursiveRelation = async (
     } )
     const keysRelation = intersection( keysData, keysFields )
     await Promise.all(
+        // eslint-disable-next-line max-lines-per-function
         map( keysRelation, async ( key ) => {
             const relationData = rootData[ key ] || {}
             const relationField: RelationField = modelFields[ key ] as RelationField

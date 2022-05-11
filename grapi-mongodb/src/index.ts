@@ -1,4 +1,4 @@
-import { DataSource } from '@scalars/grapi'
+import { DataSource } from '@grapi/server'
 import { Db, MongoClient } from 'mongodb'
 
 import { MongodbDataSource } from './mongodbDataSource'

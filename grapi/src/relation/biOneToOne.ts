@@ -5,10 +5,11 @@ import { find, isEmpty, sortBy } from '../lodash'
 import { InputRecursiveRelation } from './index'
 import { Relation, WithForeignKey } from './interface'
 
-enum relationType {
-    belongsTo = 'belongsTo',
-    hasOne = 'hasOne',
-}
+// TODO Find a usage for this ENUM
+// enum relationType {
+//     belongsTo = 'belongsTo',
+//     hasOne = 'hasOne',
+// }
 
 const createForeignKey = ( field: string, model: Model ) =>
     `${field.toLowerCase()}${model.getNamings().capitalSingular}Id`
