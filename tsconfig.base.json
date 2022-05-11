@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "composite": true,
-    "module": "commonjs",
-    "lib": ["es6", "dom"],
-    "moduleResolution": "node",
+    "module": "CommonJS",
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "moduleResolution": "Node",
     "removeComments": true,
     "sourceMap": false,
     "declaration": true,
