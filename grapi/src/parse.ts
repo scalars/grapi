@@ -4,7 +4,9 @@ import {
     MODEL_DIRECTIVE,
     RELATION_ARGS,
     RELATION_DIRECTIVE_NAME,
-    RELATION_INTERFACE_NAME, RELATION_VALUE, RELATION_WITH,
+    RELATION_INTERFACE_NAME,
+    RELATION_VALUE,
+    RELATION_WITH,
 } from './constants'
 import {
     CustomScalarField as DataCustomScalarField,
@@ -166,7 +168,6 @@ const parseSdlNameTypes = (
                 description: sdlNamedType.getDescription()
             } )
             namedTypes[name] = enumType
-            // TODO Validate just this call, all others invocations are wrong
             rootNode.addEnum( enumType )
         }
 
@@ -176,14 +177,12 @@ const parseSdlNameTypes = (
         const isModel = isGrapiDataModel( sdlNamedType )
         const isRelation = isSdlObjectType && isRelationType( sdlNamedType as SdlObjectType )
         if ( isSdlObjectType && !isModel && !isRelation ) {
-            const objectType = new ObjectType( {
+            namedTypes[name] = new ObjectType( {
                 name,
                 fields: mapValues( sdlNamedType.getFields(), sdlField => {
                     return createDataFieldFromSdlField( sdlField, getModel, getNamedType, getRelationConfig )
                 } ),
             } )
-            namedTypes[name] = objectType
-            rootNode.addObjectType( objectType )
         }
 
         // Model

@@ -1,9 +1,9 @@
 import { NamedType } from './interface'
 
 export default class EnumType implements NamedType {
-    private description: string;
-    private name: string;
-    private values: string[];
+    private readonly description: string;
+    private readonly name: string;
+    private readonly values: string[];
 
     constructor( { name, values, description }: { name: string; values: string[]; description: string } ) {
         this.name = name
@@ -21,5 +21,9 @@ export default class EnumType implements NamedType {
 
     public getDescription(): string {
         return this.description
+    }
+
+    public getTypeDef(): string {
+        return  `enum ${this.name} { ${this.values.join( ' ' )} }`
     }
 }
