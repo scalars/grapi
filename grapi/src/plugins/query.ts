@@ -1,3 +1,5 @@
+import { IObjectTypeResolver } from '@graphql-tools/utils'
+
 import { ListReadable, MapReadable, PaginatedResponse } from '..'
 import { DirectiveModelAction } from '../dataModel'
 import Model from '../dataModel/model'
@@ -74,24 +76,12 @@ export default class QueryPlugin implements Plugin {
     }: {
         model: Model;
         dataSource: ListReadable & MapReadable;
-    } ): any {
-        // object query
-        if ( model.isObjectType() ) {
-            const queryName = QueryPlugin.createObjectQueryName( model )
-            return {
-                [queryName]: async (): Promise<any> => {
-                    const response = await dataSource.getMap()
-                    // make sure graphql query get empty object
-                    return isEmpty( response ) ? {} : response
-                },
-            }
-        }
+    } ): IObjectTypeResolver {
 
-        // list query
         const findOneQueryName = QueryPlugin.createFindOneQueryName( model )
         const findManyQueryName = QueryPlugin.createFindQueryName( model )
         return {
-            [findOneQueryName]: async ( root, args, context ): Promise<any> => {
+            [findOneQueryName]: async ( root, args, context ): Promise<unknown> => {
                 const where = this.whereInputPlugin.parseUniqueWhere( args.where )
                 if ( isUndefined( where ) === false && isEmpty( where ) ) {
                     throw new Error( `You provided an invalid argument for the where selector on ${ capitalize( model.getName() ) }. Please provide exactly one unique field and value.` )
@@ -100,7 +90,7 @@ export default class QueryPlugin implements Plugin {
                 if ( data ) { return data }
                 throw new Error( `No Node for the model ${ capitalize( model.getName() ) } with unique field.` )
             },
-            [findManyQueryName]: async ( root, args, context ): Promise<any[]> => {
+            [findManyQueryName]: async ( root, args, context ): Promise<unknown[]> => {
                 const where = this.whereInputPlugin.parseWhere( args.where, model )
                 const pagination = parsePaginationFromArgs( args )
                 const orderBy = this.orderInputPlugin.parseOrder( args.orderBy )

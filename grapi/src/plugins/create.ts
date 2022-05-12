@@ -1,4 +1,4 @@
-import { IObjectTypeResolver } from 'graphql-tools'
+import { IObjectTypeResolver } from '@graphql-tools/utils'
 
 import { ListMutable, Mutation } from '..'
 import { DirectiveModelAction, Field, RelationField, RelationType } from '../dataModel'

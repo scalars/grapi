@@ -1,4 +1,4 @@
-import { IObjectTypeResolver, IResolvers } from 'graphql-tools'
+import { IObjectTypeResolver, IResolvers } from '@graphql-tools/utils'
 
 import Model from '../dataModel/model'
 import RootNode from '../rootNode'

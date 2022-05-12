@@ -1,7 +1,3 @@
-import chai from 'chai'
-import chaiHttp from 'chai-http'
-chai.use( chaiHttp )
-
 import { sdl, testSuits } from './testsuites/filtersRelations'
 import { createGrapiApp, MongodbDataSourceGroup, prepareConfig } from './testsuites/utils'
 

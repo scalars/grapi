@@ -1,9 +1,6 @@
 /**
  * OneToOne tests
  */
-import chai from 'chai'
-import chaiHttp = require( 'chai-http' );
-chai.use( chaiHttp )
 
 import { sdl, testSuits } from './testsuites/oneToOne'
 import { createGrapiApp, MongodbDataSourceGroup, prepareConfig } from './testsuites/utils'

@@ -1,4 +1,4 @@
-import { IObjectTypeResolver } from 'graphql-tools'
+import { IObjectTypeResolver } from '@graphql-tools/utils'
 
 import Model from '../dataModel/model'
 import { Context, Plugin } from './interface'

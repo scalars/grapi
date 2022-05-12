@@ -1,4 +1,4 @@
-import { IObjectTypeResolver } from 'graphql-tools'
+import { IObjectTypeResolver } from '@graphql-tools/utils'
 import * as pluralize from 'pluralize'
 
 import { DataSource } from '..'

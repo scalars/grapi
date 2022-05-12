@@ -1,6 +1,3 @@
-import chai from 'chai'
-import chaiHttp = require( 'chai-http' );
-chai.use( chaiHttp )
 import { MongoClient } from 'mongodb'
 
 import { sdl, testSuits } from './testsuites/filters'

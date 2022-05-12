@@ -1,4 +1,4 @@
-import { IObjectTypeResolver } from 'graphql-tools'
+import { IObjectTypeResolver } from '@graphql-tools/utils'
 
 import { forEach, mapValues, reduce } from '../lodash'
 import compose from './compose'
