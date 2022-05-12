@@ -1,9 +1,6 @@
 /**
  * OneModel is for simple CRUD tests
  */
-import chai from 'chai'
-import chaiHttp = require( 'chai-http' );
-chai.use( chaiHttp )
 
 import { DataSource } from '../src'
 import { sdl, testSuits } from './testsuites/oneModel'

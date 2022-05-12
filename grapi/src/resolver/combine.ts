@@ -1,4 +1,4 @@
-import { IResolvers } from 'graphql-tools'
+import { IResolvers } from '@graphql-tools/utils'
 
 import Model from '../dataModel/model'
 import { assign, forEach } from '../lodash'
@@ -6,7 +6,7 @@ import { Plugin } from '../plugins'
 
 export default ( plugins: Plugin[], models: Model[] ): IResolvers => {
     let resolvers: IResolvers = { }
-    let extendType: Record<string, any> = {}
+    let extendType: Record<string, unknown> = {}
     models.forEach( model => {
         plugins.forEach( plugin => {
             resolvers = {

@@ -1,9 +1,6 @@
 /**
  * ManyToMany is for simple CRUD tests
  */
-import chai from 'chai'
-import chaiHttp = require( 'chai-http' );
-chai.use( chaiHttp )
 
 import { sdl, testSuits } from './testsuites/manyToMany'
 import { createGrapiApp, MongodbDataSourceGroup, prepareConfig } from './testsuites/utils'

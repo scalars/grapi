@@ -1,4 +1,4 @@
-import { IObjectTypeResolver } from 'graphql-tools'
+import { IObjectTypeResolver } from '@graphql-tools/utils'
 
 export interface Pagination {
     // cursor base

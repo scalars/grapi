@@ -1,62 +1,38 @@
-import chai from 'chai'
-import chaiHttp = require( 'chai-http' );
-chai.use( chaiHttp )
-import { ApolloServer } from 'apollo-server-koa'
+import { ApolloServer } from 'apollo-server'
 import { GraphQLScalarType } from 'graphql'
-import http from 'http'
-import Koa from 'koa'
 import { isArray, mapValues } from 'lodash'
 
 import { MongodbDataSourceGroup } from '../../../grapi-mongodb/src/index'
 import { DataSource, Grapi } from '../../src'
 
+interface GraphQLMockApp {
+    graphqlRequest: ( query: string, variables: Record<string, unknown> ) => Promise<any>
+    close: () => void
+}
 export { MongodbDataSourceGroup }
 
 export const createApp = ( { sdl, dataSources, scalars, }: {
     sdl: string;
     dataSources: Record<string, ( args: any ) => DataSource>;
     scalars?: Record<string, GraphQLScalarType>;
-} ) => {
+} ): GraphQLMockApp => {
     const grapi = new Grapi( { sdl, dataSources, scalars } )
     const server = new ApolloServer( grapi.createApolloConfig() )
-    const app = new Koa()
-    server.applyMiddleware( { app } )
-    const httpServer = http.createServer( app.callback() )
-    const requester = chai.request( httpServer ).keepOpen()
-
-    const graphqlRequest = async ( query, variables? ): Promise<any> => {
-        const request = requester
-            .post( server.graphqlPath )
-
-        const res = await request.send( {
-            operationName: null,
-            query,
-            variables,
-        } )
-
-        if ( res.body && res.body.errors ) {
-            // tslint:disable-next-line:no-console
-            // console.error(JSON.stringify(res.body.errors, null, 2));
-            // return res.body.errors;
-            throw new Error( JSON.stringify( res.body.errors, null, 2 ) )
-        }
-
-        return res.body.data
+    const graphqlRequest = async ( query: string, variables: Record<string, unknown> ): Promise<any> => {
+        return ( await server.executeOperation( { query, variables } ) ).data
     }
-
     return {
         graphqlRequest,
-        close: () => requester.close(),
+        close: (): void => console.error( 'Closing' )
     }
 }
 
-export const createGrapiApp = ( sdl: string, dataSources: Record<string, any> ): any => {
-    const { graphqlRequest, close } = createApp( {
+export const createGrapiApp = ( sdl: string, dataSources: Record<string, any> ): GraphQLMockApp => {
+    return createApp( {
         sdl,
         dataSources,
         scalars: {},
     } )
-    return { graphqlRequest, close }
 }
 
 export const prepareConfig = (): any => {

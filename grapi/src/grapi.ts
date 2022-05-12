@@ -1,5 +1,5 @@
-import { Config, SchemaDirectiveVisitor } from 'apollo-server'
-import { Context, ContextFunction } from 'apollo-server-core'
+import { makeExecutableSchema } from '@graphql-tools/schema'
+import { Config, Context, ContextFunction } from 'apollo-server-core'
 import { GraphQLEnumType, GraphQLScalarType } from 'graphql'
 
 import { MODEL_DIRECTIVE, MODEL_DIRECTIVE_SOURCE_NAME } from './constants'
@@ -35,10 +35,10 @@ import { customScalars } from './scalars'
 
 export class Grapi {
     private readonly sdl: string;
-    private readonly dataSources: Record<string, ( args: unknown ) => DataSource>;
+    private readonly dataSources: Record<string, ( args: { key: string } ) => DataSource>;
     private readonly scalars: Record<string, GraphQLScalarType>;
     private readonly enums: Record<string, GraphQLEnumType>;
-    private readonly schemaDirectives: Record<string, typeof SchemaDirectiveVisitor>;
+    private readonly schemaDirectives: Record<string, unknown>;
     private readonly context: Context | ContextFunction;
     private readonly rootNode: RootNode;
     private readonly models: Model[];
@@ -59,7 +59,7 @@ export class Grapi {
         schemaDirectives,
     }: {
         sdl?: string;
-        dataSources?: Record<string, ( args: unknown ) => DataSource>;
+        dataSources?: Record<string, ( args: { key: string } ) => DataSource>;
         scalars?: Record<string, GraphQLScalarType>;
         enums?: Record<string, GraphQLEnumType>;
         context?: Context | ContextFunction;
@@ -67,7 +67,7 @@ export class Grapi {
         rootNode?: RootNode;
         models?: Model[];
         plugins?: Plugin[];
-        schemaDirectives?: Record<string, typeof SchemaDirectiveVisitor>;
+        schemaDirectives?: Record<string, unknown>;
     } ) {
         this.sdl = sdl ? sdl.concat( ...[ scalarSchema ] ) : ``
         this.dataSources = dataSources
@@ -168,9 +168,10 @@ export class Grapi {
         const resolvers = combine( plugins, models )
         const typeDefs = generator.generate( models )
         this.config = {
-            typeDefs: typeDefs.concat( scalarSchema ),
-            resolvers: assign( resolvers, this.scalars ),
-            schemaDirectives: this.schemaDirectives,
+            schema: makeExecutableSchema( {
+                resolvers: assign( resolvers, this.scalars ),
+                typeDefs: typeDefs.concat( scalarSchema ),
+            } ),
             context: this.context
         }
     }

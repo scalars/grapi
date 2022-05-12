@@ -1,9 +1,6 @@
 /**
  * OneToOneWithFK tests
  */
-import chai from 'chai'
-import chaiHttp = require( 'chai-http' );
-chai.use( chaiHttp )
 
 import { sdl, testSuits, testSuitsWithFK } from './testsuites/oneToManyWithFK'
 import { createGrapiApp, MongodbDataSourceGroup, prepareConfig } from './testsuites/utils'
