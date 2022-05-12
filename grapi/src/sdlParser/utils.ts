@@ -1,13 +1,25 @@
 import {
+    BooleanValueNode,
     DirectiveNode,
     DocumentNode,
+    EnumValueNode,
     FieldDefinitionNode,
+    FloatValueNode,
     GraphQLBoolean,
     GraphQLFloat,
     GraphQLID,
     GraphQLInt,
     GraphQLString,
+    InputValueDefinitionNode,
+    IntValueNode,
     Kind,
+    ListTypeNode,
+    ListValueNode,
+    NamedTypeNode,
+    NonNullTypeNode,
+    ObjectFieldNode,
+    ObjectValueNode,
+    StringValueNode,
     TypeDefinitionNode,
     TypeNode,
     ValueNode,
@@ -38,9 +50,7 @@ import { SdlNamedType } from './namedType/interface'
 import SdlObjectType from './namedType/objectType'
 
 const isSpecifiedScalar = ( type: string ): boolean => {
-    if ( !type ) {
-        return false
-    }
+    if ( ! type ) return false
     return (
         type === GraphQLString.name ||
         type === GraphQLInt.name ||
@@ -50,55 +60,42 @@ const isSpecifiedScalar = ( type: string ): boolean => {
     )
 }
 
-export const parseDirectiveInput = ( node: ValueNode ): InputValue => {
-    switch ( node.kind ) {
-    case Kind.INT:
-        return new IntValue( { value: parseInt( node.value, 10 ) } )
-
-    case Kind.FLOAT:
-        return new FloatValue( { value: parseFloat( node.value ) } )
-
-    case Kind.STRING:
-        return new StringValue( { value: node.value } )
-
-    case Kind.BOOLEAN:
-        return new BooleanValue( { value: node.value } )
-
-    case Kind.ENUM:
-        return new EnumValue( { value: node.value } )
-
-    case Kind.NULL:
-        return new NullValue()
-
-    case Kind.LIST:
-        return new ListValue( {
-            values: node.values.map( nestedNode => parseDirectiveInput( nestedNode ) )
-        } )
-
-    case Kind.OBJECT:
-        return new ObjectValue( {
-            fields: reduce( node.fields, ( result, field ) => {
+export const parseDirectiveInput = ( node: ValueNode | unknown ): InputValue => {
+    const inputValues = {
+        [Kind.INT]: () => new IntValue( { value: parseInt( ( node as IntValueNode ).value ) } ),
+        [Kind.FLOAT]: () => new FloatValue( { value: parseFloat( ( node as FloatValueNode ).value ) } ),
+        [Kind.STRING]: () => new StringValue( { value: ( node as StringValueNode ).value } ),
+        [Kind.BOOLEAN]: () => new BooleanValue( { value: ( node as BooleanValueNode ).value } ),
+        [Kind.ENUM]: () => new EnumValue( { value: ( node as EnumValueNode ).value } ),
+        [Kind.OBJECT]: () => new ObjectValue( {
+            fields: reduce( ( node as ObjectValueNode ).fields, ( result, field: ObjectFieldNode ) => {
                 result[field.name.value] = parseDirectiveInput( field.value )
                 return result
             }, {} )
-        } )
-
-        // all the scalars
-    default:
-        throw new Error( `not supported type in directive parsing: ${node.kind}` )
+        } ),
+        [Kind.LIST]: () => new ListValue( {
+            values: ( node as ListValueNode ).values.map( nestedNode => parseDirectiveInput( nestedNode ) )
+        } ),
+        [Kind.NULL]: () => new NullValue()
     }
+    const inputValue = inputValues[( node as ValueNode ).kind]
+
+    if ( ! inputValue ) {
+        throw new Error( `not supported type in directive parsing: ${( node as ValueNode ).kind}` )
+    }
+    return inputValue()
 }
 
-export const parseDirectiveNode = ( node: DirectiveNode ): SdlDirective => {
+export const parseDirectiveNode = ( node: DirectiveNode | InputValueDefinitionNode ): SdlDirective => {
     return {
-        args: reduce( node.arguments, ( result, argNode ) => {
+        args: reduce( ( node as DirectiveNode ).arguments || [], ( result, argNode ) => {
             result[argNode.name.value] = parseDirectiveInput( argNode.value )
             return result
         }, {} ),
     }
 }
 
-export const findTypeInDocumentAst = ( node: DocumentNode, name: string ): any => {
+export const findTypeInDocumentAst = ( node: DocumentNode, name: string ): Kind | null => {
     const foundNode = node.definitions.find( ( defNode: TypeDefinitionNode ) => {
         return defNode.name.value === name
     } )
@@ -106,15 +103,16 @@ export const findTypeInDocumentAst = ( node: DocumentNode, name: string ): any =
 }
 
 export const parseWrappedType = ( node: TypeNode, typeWrapped: string[] = [] ): {type: string; wrapped: string[]} => {
-    if ( node.kind === Kind.NON_NULL_TYPE ) {
-        return parseWrappedType( node.type, typeWrapped.concat( Kind.NON_NULL_TYPE ) )
+    const wrappedTypes = {
+        [Kind.NON_NULL_TYPE]: () => parseWrappedType(
+            ( node as NonNullTypeNode ).type, typeWrapped.concat( Kind.NON_NULL_TYPE )
+        ),
+        [Kind.LIST_TYPE]: () => parseWrappedType(
+            ( node as ListTypeNode ).type, typeWrapped.concat( Kind.LIST_TYPE )
+        ),
+        [Kind.NAMED_TYPE]: () => ( { type: ( node as NamedTypeNode ).name.value, wrapped: typeWrapped } )
     }
-
-    if ( node.kind === Kind.LIST_TYPE ) {
-        return parseWrappedType( node.type, typeWrapped.concat( Kind.LIST_TYPE ) )
-    }
-
-    return { type: node.name.value, wrapped: typeWrapped }
+    return wrappedTypes[node.kind]()
 }
 
 export const createSdlField = (
@@ -141,30 +139,26 @@ export const createSdlField = (
         return new ScalarField( fieldConfigs )
     }
 
-    // find its type
-    const nodeType = findTypeInDocumentAst( documentNode, type )
+    const nodeType: Kind = findTypeInDocumentAst( documentNode, type )
     if ( !nodeType ) {
         throw new Error( `type of "${type}" not found in document` )
     }
-
-    switch ( nodeType ) {
-    case Kind.SCALAR_TYPE_DEFINITION:
-        return new CustomScalarField( fieldConfigs )
-
-    case Kind.ENUM_TYPE_DEFINITION:
-        // eslint-disable-next-line no-case-declarations
-        const enumField = new EnumField( fieldConfigs )
-        enumField.setEnumType(
-            () => getSdlNamedType( enumField.getTypeName() ) as SdlEnumType,
-        )
-        return enumField
-
-    case Kind.OBJECT_TYPE_DEFINITION:
-        // eslint-disable-next-line no-case-declarations
-        const field = new ObjectField( fieldConfigs )
-        field.setObjectType(
-            () => getSdlNamedType( field.getTypeName() ) as SdlObjectType,
-        )
-        return field
+    const nodeTypes = {
+        [Kind.SCALAR_TYPE_DEFINITION]: () => new CustomScalarField( fieldConfigs ),
+        [Kind.ENUM_TYPE_DEFINITION]: () => {
+            const enumField = new EnumField( fieldConfigs )
+            enumField.setEnumType(
+                () => getSdlNamedType( enumField.getTypeName() ) as SdlEnumType,
+            )
+            return enumField
+        },
+        [Kind.OBJECT_TYPE_DEFINITION]: () => {
+            const field = new ObjectField( fieldConfigs )
+            field.setObjectType(
+                () => getSdlNamedType( field.getTypeName() ) as SdlObjectType,
+            )
+            return field
+        }
     }
+    return nodeTypes[nodeType]()
 }

@@ -1,10 +1,6 @@
-import {
-    GraphQLFieldConfig,
-    InputObjectTypeDefinitionNode,
-} from 'graphql'
+import { InputObjectTypeDefinitionNode, } from 'graphql'
 
-import { EnumType, ObjectType } from './dataModel'
-import { isString } from './lodash'
+import { EnumType } from './dataModel'
 
 export default class RootNode {
     private typeDef: string = ``;
@@ -13,24 +9,17 @@ export default class RootNode {
 
     // query could be queryName(args): type, or a GraphQLFieldConfig
     public addQuery( query: string ): void {
-        if ( isString( query ) ) {
-            if ( !RootNode.findInSdl( query, this.typeDefQuery ) ) {
-                this.typeDefQuery = this.typeDefQuery.concat( ...[ `\n`, query ] )
-            }
+        if ( !RootNode.findInSdl( query, this.typeDefQuery ) ) {
+            this.typeDefQuery = this.typeDefQuery.concat( ...[ `\n`, query ] )
         }
     }
 
     // mutation could be mutationName(args): type, or a GraphQLFieldConfig
-    public addMutation( mutation: string | { name: string; field: () => GraphQLFieldConfig<any, any> } ): void {
-        if ( isString( mutation ) ) {
-            if ( !RootNode.findInSdl( mutation, this.typeDefMutation ) ) {
-                this.typeDefMutation = this.typeDefMutation.concat( ...[ `\n`, mutation ] )
-            }
-        }
+    public addMutation( mutation: string ): void {
+        this.typeDefMutation = this.typeDefMutation.concat( ...[ `\n`, mutation ] )
     }
 
-    public addObjectType( type: string | ObjectType ): void {
-        // TODO What if ObjectType is duplicated on schema
+    public addObjectType( type: string ): void {
         this.addSdl( type as string, false )
     }
 
@@ -38,17 +27,15 @@ export default class RootNode {
         this.addSdl( input as string )
     }
 
-    public addEnum( enumDef: string | EnumType, description: string = undefined ): void {
-        this.addSdl( enumDef as string, true, description )
+    public addEnum( enumDef: EnumType, description: string = undefined ): void {
+        this.addSdl( enumDef.getTypeDef(), true, description )
     }
 
     public addSdl( sdl: string, validate: boolean = true, description: string = undefined ): void {
-        if ( isString( sdl ) ) {
-            if ( ! validate || ! RootNode.findInSdl( sdl, this.typeDef ) ) {
-                this.typeDef = this.typeDef.concat(
-                    ...[ `\n`, description ? `"""${description}""" ` : ``, sdl ]
-                )
-            }
+        if ( ! validate || ! RootNode.findInSdl( sdl, this.typeDef ) ) {
+            this.typeDef = this.typeDef.concat(
+                ...[ `\n`, description ? `"""${description}""" ` : ``, sdl ]
+            )
         }
     }
 

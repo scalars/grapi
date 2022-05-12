@@ -160,7 +160,7 @@ export class Grapi {
                 model.mergeResolver( model.getDataSource().resolveFields() )
             }
         } )
-        rootNode.addEnum( orderByInputEnum )
+        rootNode.addSdl( orderByInputEnum )
         rootNode.addInput( inputIntBetween )
         rootNode.addInput( inputFloatBetween )
         rootNode.addInput( inputDateTimeBetween )

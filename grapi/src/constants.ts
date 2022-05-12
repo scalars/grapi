@@ -1,8 +1,6 @@
 
 export const MODEL_DIRECTIVE = 'Model'
 
-export const OBJECT_DIRECTIVE = 'Object'
-
 export const MODEL_DIRECTIVES = 'Directives'
 
 export const MODEL_DIRECTIVE_SOURCE_NAME = 'dataSource'

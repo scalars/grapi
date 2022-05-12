@@ -1,5 +1,4 @@
 import { RelationField, RelationType } from '../dataModel'
-import EnumField from '../dataModel/enumField'
 import Field from '../dataModel/field'
 import ObjectField from '../dataModel/objectField'
 import { DataModelType } from '../dataModel/type'
@@ -23,13 +22,6 @@ const recursiveCreateType = ( fields: Record<string, Field>, context: Context ):
     const { root } = context
     const content: string[] = []
     forEach( fields, ( field, name ) => {
-        if ( field instanceof EnumField ) {
-            root.addEnum(
-                `enum ${field.getTypename()} { ${field.getValues().join( ', ' )} }`,
-                field.getDescription()
-            )
-        }
-
         if ( field instanceof ObjectField ) {
             // create type for nested object
             const typeFields = recursiveCreateType( field.getFields(), context )
