@@ -16,7 +16,7 @@ import {
     WhereOperator
 } from '@grapi/server'
 import { FilterListObject } from '@grapi/server/lib/dataModel/type'
-import { Db, FilterQuery } from 'mongodb'
+import { Db, Filter } from 'mongodb'
 
 import {
     assign,
@@ -44,11 +44,11 @@ export class MongodbData {
         this.collectionName = collectionName
     }
 
-    public async findOneInCollection( filterQuery: FilterQuery<any> ): Promise<any[]> {
-        return await this.db.collection( this.collectionName ).findOne( filterQuery )
+    public async findOneInCollection( filterQuery: Filter<unknown> ): Promise<unknown> {
+        return this.db.collection( this.collectionName ).findOne( filterQuery )
     }
 
-    public async findInCollection( filterQuery: FilterQuery<any>, orderBy = {}, pagination: Pagination = {} ): Promise<any[]> {
+    public async findInCollection( filterQuery: Filter<unknown>, orderBy = {}, pagination: Pagination = {} ): Promise<any[]> {
         return await this.db.collection( this.collectionName )
             .find( filterQuery )
             .sort( orderBy )
@@ -65,7 +65,7 @@ export class MongodbData {
                 data = isEmpty( data ) && iteration === 0 ? await this.findInCollection( {}, orderBy ) : data
                 data = await this.executeRelationFilters( whereFilter as Record<string, RelationWhere>, data )
             } else {
-                const baseFilters: any[] = []
+                const baseFilters: unknown[] = []
                 const relationFilters: any[] = []
                 if ( operator === Operator.and || operator === Operator.or ) {
                     forEach( whereFilter, ( item: RelationWhere ) => {
@@ -78,7 +78,7 @@ export class MongodbData {
                 }
                 if ( isEmpty( baseFilters ) === false || operator as any === WhereOperator.base || isEmpty( whereFilter ) ) {
                     const filters: any = isEmpty( baseFilters ) ? whereFilter : baseFilters
-                    const filterQuery: FilterQuery<any> =  this.whereToFilterQuery( filters, operator as Operator )
+                    const filterQuery: Filter<unknown> =  this.whereToFilterQuery( filters, operator as Operator )
                     data = await this.findInCollection( filterQuery, orderBy, isEmpty( relationFilters ) ? pagination : {} )
                     iteration = iteration + 1
                 }
@@ -235,7 +235,7 @@ export class MongodbData {
      * @param where Filtro a aplicar en los muchos objetos
      */
     public async findManyRelation( foreignKey: string, foreignId: string, collectionName: string, where: Where ): Promise<any[]> {
-        const filterQuery: FilterQuery<any> = this.whereToFilterQuery( { ...where, [foreignKey]: { [Operator.eq]: foreignId } } )
+        const filterQuery: Filter<unknown> = this.whereToFilterQuery( { ...where, [foreignKey]: { [Operator.eq]: foreignId } } )
         return await this.db.collection( collectionName )
             .find( filterQuery )
             .project( { _id: 0 } )
@@ -267,7 +267,7 @@ export class MongodbData {
         )
     }
 
-    public whereToFilterQuery( where: Where, operator: Operator = undefined ): FilterQuery<Record<string, any>> {
+    public whereToFilterQuery( where: Where, operator: Operator = undefined ): Filter<Record<string, unknown>> {
         const filterQuery: Record<string, unknown> = {}
         const whereCallback = ( field: string, operator: Operator, value: any ): void => {
             switch ( operator ) {
@@ -313,7 +313,7 @@ export class MongodbData {
             }
         }
         if ( isEmpty( where ) === false && ( operator === Operator.or || operator === Operator.and ) ) {
-            const filtersQuery: Array<FilterQuery<any>> = []
+            const filtersQuery: Array<Filter<unknown>> = []
             forEach( where, ( whereItem: Where ) => {
                 if ( isEmpty( whereItem ) === false ) {
                     const { operator, filters } = this.findRecursiveOperator( whereItem )
@@ -357,7 +357,7 @@ export class MongodbData {
         return payload
     };
 
-    public handleMongoDbError ( error ) {
+    public handleMongoDbError ( error ): void {
         if ( error.code === 11000 ) {
             const keyValues: string = values( error.keyValue ).join( ' ' )
             throw new Error(

@@ -1,6 +1,6 @@
 {
   "name": "@grapi/mongodb",
-  "version": "2.2.10",
+  "version": "3.0.0",
   "description": "The mongodb package of Grapi",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -35,14 +35,14 @@
   "author": "madrov",
   "license": "Apache-2.0",
   "dependencies": {
-    "@grapi/server": "^2.2.10",
-    "mongodb": "^3.6.9",
-    "mongodb-client-encryption": "^1.2.4"
+    "@grapi/server": "^3.0.0",
+    "mongodb": "^4.6.0"
   },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
+    "@types/mongodb": "^4.0.7",
     "rimraf": "^2.6.2"
   }
 }

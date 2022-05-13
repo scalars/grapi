@@ -1,6 +1,6 @@
 {
   "name": "@grapi/server",
-  "version": "2.2.10",
+  "version": "3.0.0",
   "description": "Grapi Schema Generator For GraphQL Server",
   "keywords": [
     "grapi",
@@ -33,11 +33,11 @@
     "postpublish": "yarn rimraf readme.md"
   },
   "dependencies": {
+    "@graphql-tools/schema": "^8.3.11",
+    "@graphql-tools/utils": "^8.6.10",
     "build": "^0.1.4",
     "chalk": "^2.4.1",
     "graphql": "^16.0.0",
-    "@graphql-tools/utils": "^8.6.10",
-    "@graphql-tools/schema": "^8.3.11",
     "lodash": "^4.17.21",
     "pluralize": "^8.0.0",
     "validator": "^13.5.2"
@@ -45,10 +45,8 @@
   "author": "madrov",
   "license": "ISC",
   "devDependencies": {
-    "@types/mongodb": "^4.0.7",
     "apollo-server": "^3.7.0",
     "graphql-type-json": "^0.3.2",
-    "mongodb": "^4.6.0",
     "rimraf": "^2.6.2"
   },
   "peerDependencies": {

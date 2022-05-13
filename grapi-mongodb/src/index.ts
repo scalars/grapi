@@ -22,7 +22,7 @@ export class MongodbDataSourceGroup implements DataSourceGroup {
     }
 
     public async initialize(): Promise<void> {
-        this.mongoClient = await MongoClient.connect( this.uri, { useUnifiedTopology: true } )
+        this.mongoClient = await MongoClient.connect( this.uri )
         this.db = this.mongoClient.db( this.dbName )
     }
 
