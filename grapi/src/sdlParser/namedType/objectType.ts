@@ -5,12 +5,12 @@ import { SdlDirective } from '../interface'
 import { SdlNamedType } from './interface'
 
 export default class SdlObjectType implements SdlNamedType<ObjectTypeDefinitionNode> {
-    private name: string;
-    private typeDef: ObjectTypeDefinitionNode;
-    private description: string;
-    private interfaces: string[];
-    private directives: Record<string, SdlDirective>;
-    private fields: Record<string, SdlField>;
+    private readonly name: string;
+    private readonly typeDef: ObjectTypeDefinitionNode;
+    private readonly description: string;
+    private readonly interfaces: string[];
+    private readonly directives: Record<string, SdlDirective>;
+    private readonly fields: Record<string, SdlField>;
 
     constructor( {
         name,
@@ -59,7 +59,7 @@ export default class SdlObjectType implements SdlNamedType<ObjectTypeDefinitionN
         return this.directives
     }
 
-    public getTypeDef(): any {
+    public getTypeDef(): ObjectTypeDefinitionNode {
         return this.typeDef
     }
 }

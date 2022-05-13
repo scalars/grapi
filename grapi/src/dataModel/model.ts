@@ -3,7 +3,7 @@ import * as pluralize from 'pluralize'
 
 import { DataSource } from '..'
 import { MODEL_DIRECTIVES } from '../constants'
-import { capitalize, defaultTo, find, forOwn, isEmpty, pickBy } from '../lodash'
+import { capitalize, find, forOwn, isEmpty, pickBy } from '../lodash'
 import { MutationFactory } from '../plugins/mutation'
 import Field from './field'
 import { DirectiveModelAction } from './type'
@@ -30,17 +30,12 @@ export default class Model {
     private createMutationFactory: MutationFactory = new MutationFactory();
     private updateMutationFactory: MutationFactory = new MutationFactory();
 
-    // for object type api
-    private readonly isObject: boolean;
-
     constructor( {
         name,
-        fields,
-        isObject,
+        fields
     }: {
         name: string;
-        fields?: Record<string, Field>;
-        isObject?: boolean;
+        fields?: Record<string, Field>
     } ) {
         this.name = name
         // lowercase and singular it first
@@ -51,7 +46,6 @@ export default class Model {
             capitalSingular: capitalize( key ),
         }
         this.fields = fields || {}
-        this.isObject = defaultTo( isObject, false )
     }
 
     public appendField( name: string, field: Field ): void {
@@ -140,10 +134,5 @@ export default class Model {
 
     public getUpdateMutationFactory = (): MutationFactory => {
         return this.updateMutationFactory
-    };
-
-    // for object api
-    public isObjectType = (): boolean => {
-        return this.isObject
     };
 }

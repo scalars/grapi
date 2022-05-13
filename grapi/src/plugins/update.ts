@@ -243,14 +243,6 @@ export default class UpdatePlugin implements Plugin {
 
     public visitModel( model: Model, context: Context ): void {
         const { root } = context
-        // object
-        // if ( model.isObjectType() ) {
-        //     const objectMutationName = this.getInputName( model );
-        //     const objectInputName = this.generateUpdateInput( model, context );
-        //     const objectReturnType = this.createObjectReturnType( model, context );
-        //     root.addMutation( `${objectMutationName}(data: ${objectInputName}!): ${objectReturnType}` );
-        //     return;
-        // }
 
         // list
         const returnType = this.baseTypePlugin.getTypename( model )
@@ -266,32 +258,6 @@ export default class UpdatePlugin implements Plugin {
     public resolveInMutation( { model, dataSource }: {model: Model; dataSource: ListMutable & MapMutable} ): any {
         const mutationName = UpdatePlugin.getInputName( model )
         const wrapUpdate = get( this.hook, [ model.getName(), 'wrapUpdate' ] )
-
-        // // object
-        // if ( model.isObjectType() ) {
-        //     return {
-        //         [mutationName]: async ( root, args, context ): Promise<any> => {
-        //             const data = { ...args.data };
-        //
-        //             // no relationship or other hooks
-        //             if ( !wrapUpdate ) {
-        //                 await dataSource.updateMap( this.createMutation( model, data ) );
-        //                 return { success: true };
-        //             }
-        //
-        //             const updateContext: UpdateContext = {
-        //                 where: args.where,
-        //                 data,
-        //                 response: {},
-        //                 graphqlContext: context,
-        //             };
-        //             await wrapUpdate( updateContext, async ctx => {
-        //                 await dataSource.updateMap( this.createMutation( model, ctx.data ) );
-        //             } );
-        //             return { success: true };
-        //         },
-        //     };
-        // }
 
         // list
         return {

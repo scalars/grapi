@@ -50,10 +50,6 @@ export default class RelayPlugin implements Plugin {
     }
 
     public visitModel( model: Model, context: Context ): void {
-        // object type model dont need relay query
-        if ( model.isObjectType() ) {
-            return
-        }
         const { root } = context
         // const modelType = this.baseTypePlugin.getTypename( model );
 
@@ -81,10 +77,6 @@ export default class RelayPlugin implements Plugin {
         model: Model;
         dataSource: ListReadable;
     } ): any {
-        // object type model dont need relay query
-        if ( model.isObjectType() ) {
-            return
-        }
 
         // list api
         const queryName = RelayPlugin.createConnectionQueryName( model )
