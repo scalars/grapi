@@ -1,6 +1,6 @@
 {
   "name": "@grapi/server",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Grapi Schema Generator For GraphQL Server",
   "keywords": [
     "grapi",
@@ -40,11 +40,12 @@
     "graphql": "^16.0.0",
     "lodash": "^4.17.21",
     "pluralize": "^8.0.0",
-    "validator": "^13.5.2"
+    "validator": "^13.7.0"
   },
   "author": "madrov",
   "license": "ISC",
   "devDependencies": {
+    "@types/validator": "^13.7.2",
     "apollo-server": "^3.7.0",
     "graphql-type-json": "^0.3.2",
     "rimraf": "^2.6.2"

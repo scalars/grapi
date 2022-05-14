@@ -1,5 +1,5 @@
 import { GraphQLScalarType } from 'graphql'
-import { isURL } from 'validator'
+import isURL from 'validator/lib/isURL'
 const options = {
     protocols: [ 'http', 'https' ],
     require_protocol: true,
