@@ -24,7 +24,7 @@
   "scripts": {
     "clean": "yarn rimraf lib && yarn rimraf tsconfig.release.tsbuildinfo",
     "build": "yarn clean && yarn tsc --build ./tsconfig.release.json",
-    "test": "yarn run mocha --timeout 100000 --compilers ts:ts-node/register --recursive \"test/**/*.spec.ts\"",
+    "test": "yarn mocha --timeout 100000 --require ts-node/register --recursive --exit \"test/**/*.spec.ts\"",
     "test:grep": "yarn run mocha --compilers ts:ts-node/register --recursive",
     "coverage": "yarn run nyc yarn run test",
     "watch": "yarn run build -- --watch",

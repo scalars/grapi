@@ -11,10 +11,10 @@ import includes from 'lodash/includes'
 import isEmpty from 'lodash/isEmpty'
 import isEqual from 'lodash/isEqual'
 import isNil from 'lodash/isNil'
+import keys from 'lodash/keys'
 import toLower from 'lodash/toLower'
 import uniqWith from 'lodash/uniqWith'
 import values from 'lodash/values'
-
 
 export {
     assign,
@@ -30,6 +30,7 @@ export {
     isEmpty,
     isEqual,
     isNil,
+    keys,
     toLower,
     uniqWith,
     values

@@ -30,9 +30,9 @@ import {
     includes,
     isEmpty,
     isEqual,
+    keys,
     toLower,
-    uniqWith,
-    values
+    uniqWith
 } from './lodash'
 
 export class MongodbData {
@@ -359,9 +359,9 @@ export class MongodbData {
 
     public handleMongoDbError ( error ): void {
         if ( error.code === 11000 ) {
-            const keyValues: string = values( error.keyValue ).join( ' ' )
+            const keyValues: string = keys( error.keyValue ).join( ', ' )
             throw new Error(
-                `Constraint unique value "${ keyValues }" duplicate on ${ capitalize( this.collectionName ) } model`,
+                `Constraint unique value expected for "${ keyValues }" duplicate on ${ capitalize( this.collectionName ) } model`,
             )
         } else if ( error.code === 121 ) {
             throw new Error(
