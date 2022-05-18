@@ -27,7 +27,7 @@ describe( 'validations unique and required', () => {
     before( async () => {
         await mongodbDataSourceGroup.initialize()
         collection = await mongodbDataSourceGroup.getDataBase().createCollection( collectionName )
-        await collection.createIndex( { name: 1 }, { unique: true } )
+        await collection.createIndexes( [ {  name: 'name', key: { name: 1 } } ], { unique: true } )
         await mongodbDataSourceGroup.getDataBase().command( {
             collMod: collectionName,
             validator: {
