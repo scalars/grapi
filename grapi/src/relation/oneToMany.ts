@@ -84,7 +84,6 @@ export default class OneToMany implements Relation, WithForeignKey {
 
     public async destroyAndUnsetForeignKeyOnManySide( data: Record<string, any>, context: any ): Promise<{ [x: string]: string }> {
         const foreignId = data[this.foreignKey]
-        console.info( 'Im deleting', this.foreignKey )
         if ( !foreignId ) {
             return
         }
