@@ -1,6 +1,6 @@
 {
   "name": "@grapi/server",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Grapi Schema Generator For GraphQL Server",
   "keywords": [
     "grapi",

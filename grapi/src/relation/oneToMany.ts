@@ -65,7 +65,7 @@ export default class OneToMany implements Relation, WithForeignKey {
         return { [this.foreignKey]: targetId }
     }
 
-    public async createAndSetForeignKeyOnManySide( targetData: Record<string, any>, context: any ): Promise<{ [x: string]: string }> {
+    public async createAndSetForeignKeyOnManySide( targetData: Record<string, any>, context: unknown ): Promise<{ [x: string]: string }> {
         const execution = async ( data: Record<string, any> ): Promise< { data: Record<string, any>, object: Record<string, any> } > => {
             const mutation = this.oneSideModel.getCreateMutationFactory().createMutation( data )
             const created = await this.oneSideModel.getDataSource().create( mutation, context )
@@ -84,6 +84,7 @@ export default class OneToMany implements Relation, WithForeignKey {
 
     public async destroyAndUnsetForeignKeyOnManySide( data: Record<string, any>, context: any ): Promise<{ [x: string]: string }> {
         const foreignId = data[this.foreignKey]
+        console.info( 'Im deleting', this.foreignKey )
         if ( !foreignId ) {
             return
         }

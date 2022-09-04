@@ -19,7 +19,11 @@ export const createApp = ( { sdl, dataSources, scalars, }: {
     const grapi = new Grapi( { sdl, dataSources, scalars } )
     const server = new ApolloServer( grapi.createApolloConfig() )
     const graphqlRequest = async ( query: string, variables: Record<string, unknown> ): Promise<any> => {
-        return ( await server.executeOperation( { query, variables } ) ).data
+        const { data = {}, errors } = await server.executeOperation( { query, variables } )
+        return {
+            ...data,
+            errors
+        }
     }
     return {
         graphqlRequest,
