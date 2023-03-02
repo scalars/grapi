@@ -77,6 +77,8 @@ export function testSuitsWithFK(): void {
         expect( createUser.books[0].editorial ).to.have.property( 'id' )
     } )
 
+    it( `should update recursive items with bi-one-to-*` )
+
     it( `should delete recursive items with bi-one-to-*`, async () => {
         const createUserVariables = {
             data: wrapSetToArrayField( fakeUserData(  {
