@@ -30,7 +30,7 @@ const fieldMessages = ( fields: Record<string, Field> ): string[] => {
 
 const modelMessages = ( models: Model[] ): string[] => {
     return flatten( models.map( model => {
-        const modelType = model.isObjectType() ? 'ObjectModel' : 'Model'
+        const modelType = 'Model'
         // tslint:disable-next-line:max-line-length
         const title = `${SPACE.repeat( 4 )}- ${modelType} ${chalk.bold( model.getNamings().capitalSingular )} ${chalk.gray( `(generated from '${model.getName()}')` )}`
         return [ title, ...fieldMessages( model.getFields() ), '\n' ]

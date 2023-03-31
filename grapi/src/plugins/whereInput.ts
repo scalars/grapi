@@ -16,11 +16,6 @@ const UNDERSCORE = '_'
 
 export default class WhereInputPlugin implements Plugin {
     public visitModel( model: Model, context: Context ): void {
-        // object type model dont need whereInput
-        if ( model.isObjectType() ) {
-            return
-        }
-
         // list model
         const { root } = context
 

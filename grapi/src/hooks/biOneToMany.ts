@@ -33,8 +33,8 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
         return Promise.all( ids.map( id => relationImpl.removeIdFromOneSide( sourceId, id, context ) ) )
     }
 
-    const destroy = ( sourceId: string, ids: string[], context: any ): Promise<void[]> => {
-        return Promise.all( ids.map( id => relationImpl.addIdFromOneSide( sourceId, id, context ) ) )
+    const destroy = ( ids: string[], context: unknown ): Promise<void[]> => {
+        return Promise.all( ids.map( id => relationImpl.deleteRecordFromOneSide( id, context ) ) )
     }
 
     // many side
@@ -50,9 +50,8 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
         return relationImpl.unsetForeignKeyOnManySide()
     }
 
-    const destroyOne = async ( data: any, context: any ): Promise<any> => {
-        data = await relationImpl.destroyAndUnsetForeignKeyOnManySide( data, context )
-        return data
+    const destroyOne = async ( data: unknown, context: unknown ): Promise<unknown> => {
+        return await relationImpl.destroyAndUnsetForeignKeyOnManySide( data, context )
     }
 
     // todo: add cascade delete
@@ -122,7 +121,7 @@ export const createHookMap = ( relation: ModelRelation ): Record<string, Hook> =
 
                 if ( deleteWhere ) {
                     const deleteIds = deleteWhere.map( v => v.id )
-                    await destroy( where.id, deleteIds, graphqlContext )
+                    await destroy( deleteIds, graphqlContext )
                 }
 
                 return updated

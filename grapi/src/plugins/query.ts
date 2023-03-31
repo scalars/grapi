@@ -35,12 +35,6 @@ export default class QueryPlugin implements Plugin {
         const { root } = context
         const modelType = this.baseTypePlugin.getTypename( model )
 
-        // object query
-        if ( model.isObjectType() ) {
-            const queryName = QueryPlugin.createObjectQueryName( model )
-            root.addQuery( `${queryName}: ${modelType}` )
-            return
-        }
         // Find if authDirective is enable
         const directives = model.getDirectives( DirectiveModelAction.Read )
 
@@ -98,10 +92,6 @@ export default class QueryPlugin implements Plugin {
                 return response.data
             },
         }
-    }
-
-    private static createObjectQueryName( model: Model ): string {
-        return model.getNamings().singular
     }
 
     private static createFindQueryName( model: Model ): string {

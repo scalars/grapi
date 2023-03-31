@@ -1,5 +1,5 @@
 import { GraphQLScalarType } from 'graphql'
-import { isEmail } from 'validator'
+import isEmail from 'validator/lib/isEmail'
 
 const parseAndSerializeValue = ( value: string ): string => {
     if ( isEmail( value ) ) {

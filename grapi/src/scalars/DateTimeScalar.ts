@@ -1,5 +1,5 @@
 import { GraphQLScalarType } from 'graphql'
-import { isISO8601 } from 'validator'
+import isISO8601 from 'validator/lib/isISO8601'
 
 // DateTime scalar
 const serialize = ( value: Date ): Date => {

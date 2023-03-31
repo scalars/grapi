@@ -4,10 +4,10 @@ import { SdlDirective } from '../interface'
 import { SdlNamedType } from './interface'
 
 export default class SdlScalarType implements SdlNamedType {
-    private typeDef: ScalarTypeDefinitionNode;
-    private name: string;
-    private description: string;
-    private directives: Record<string, SdlDirective>;
+    private readonly typeDef: ScalarTypeDefinitionNode;
+    private readonly name: string;
+    private readonly description: string;
+    private readonly directives: Record<string, SdlDirective>;
 
     constructor( {
         name,
@@ -38,7 +38,7 @@ export default class SdlScalarType implements SdlNamedType {
         return this.directives
     }
 
-    public getTypeDef(): any {
+    public getTypeDef(): ScalarTypeDefinitionNode {
         return this.typeDef
     }
 }

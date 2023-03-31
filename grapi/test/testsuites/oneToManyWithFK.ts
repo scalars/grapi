@@ -44,10 +44,20 @@ const fakeUserData = ( data?: any ) => {
     }
 }
 
+const createBookQuery = `
+    mutation createUser( $data: UserCreateInput! ) {
+        createUser( data: $data ){ 
+            ${userFields} 
+            books{ 
+                ${bookWithEditorialFields}
+            }
+        }
+    }
+`
 // use same testsuite with one-to-one
 export const sdl = readFileSync( path.resolve( __dirname, '../fixtures/oneToManyWithFK.graphql' ), { encoding: 'utf8' } )
 
-export function testSuitsWithFK(){
+export function testSuitsWithFK(): void {
     it( `Should create recursive items with bi-one-to-*`, async () => {
         const createUserVariables = {
             data: wrapSetToArrayField( fakeUserData(  {
@@ -59,17 +69,77 @@ export function testSuitsWithFK(){
                 }
             } ) ),
         }
-        const createBookQuery = `
-            mutation createUser( $data: UserCreateInput! ){
-                createUser( data: $data ){ ${userFields} books{ ${bookWithEditorialFields} } }
-            }
-        `
         const { createUser } = await ( this as any ).graphqlRequest( createBookQuery, createUserVariables )
 
         expect( createUser ).to.have.property( 'id' )
         expect( createUser.books ).with.length( 1 )
         expect( createUser.books[0] ).to.have.property( 'id' )
         expect( createUser.books[0].editorial ).to.have.property( 'id' )
+    } )
+
+    it( `should update recursive items with bi-one-to-*` )
+
+    it( `should delete recursive items with bi-one-to-*`, async () => {
+        const createUserVariables = {
+            data: wrapSetToArrayField( fakeUserData(  {
+                books: {
+                    create: [
+                        {
+                            name: faker.name.findName(),
+                            editorial: { create: { name: faker.name.findName() } }
+                        },
+                        {
+                            name: faker.name.findName(),
+                            editorial: { create: { name: faker.name.findName() } }
+                        },
+                        {
+                            name: faker.name.findName(),
+                            editorial: { create: { name: faker.name.findName() } }
+                        }
+                    ]
+                }
+            } ) ),
+        }
+
+        const { createUser } = await ( this as any ).graphqlRequest( createBookQuery, createUserVariables )
+
+        expect( createUser.books ).with.length( 3 )
+
+        const { updateUser } = await ( this as any ).graphqlRequest(
+            `mutation ( 
+                $where: UserWhereUniqueInput!
+                $data: UserUpdateInput!
+            ) {
+                updateUser( where: $where, data: $data ) {
+                    ${userFields}
+                    books {
+                        ${bookWithEditorialFields}
+                    }
+                }
+            }`,
+            {
+                where: { id: createUser.id },
+                data: {
+                    books: {
+                        delete: [ { id: createUser.books[1].id } ]
+                    }
+                }
+            }
+        )
+
+        expect( updateUser.books ).with.length( 2 )
+
+        const { errors } = await ( this as any ).graphqlRequest(
+            `query {
+                book ( where: { id: "${createUser.books[1].id}" } ) {
+                    ${bookWithEditorialFields}
+                }
+            }`
+            ,
+            {}
+        )
+
+        expect( errors ).not.to.be.undefined
     } )
 }
 

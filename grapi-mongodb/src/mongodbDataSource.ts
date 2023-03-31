@@ -25,7 +25,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         return paginate( data, pagination )
     }
 
-    public async findOne( { where }: { where: Where } ): Promise<any> {
+    public async findOne( { where }: { where: Where } ): Promise<unknown> {
         return await this.findOneInCollection( this.whereToFilterQuery( where ) )
     }
 
@@ -33,17 +33,17 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         return await this.findOneInCollection( this.whereToFilterQuery( { id: { [Operator.eq]: id } } ) )
     }
 
-    public async create( mutation: Mutation ): Promise<any> {
+    public async create( mutation: Mutation ): Promise<unknown> {
         const payload = this.transformMutation( mutation )
         try {
             const insertResult = await this.db.collection( this.collectionName ).insertOne( payload )
-            const insertedItem: { _id: ObjectId, id: string } = ( insertResult.ops || [] ).shift()
+            const insertedItem: { _id: ObjectId } = { _id: insertResult.insertedId }
             if ( insertedItem ) {
                 await this.db.collection( this.collectionName ).updateOne(
                     { _id: insertedItem._id },
                     { $set: { id: insertedItem._id.toString() } }
                 )
-                return { ...insertedItem, id: insertedItem._id.toString() }
+                return await this.findOneInCollection( { id: insertedItem._id.toString() } )
             }
         } catch ( error ) {
             this.handleMongoDbError( error )
@@ -63,18 +63,22 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         return await this.findOne( { where } )
     }
 
-    public async delete( where: Where ): Promise<any> {
+    public async delete( where: Where ): Promise<void> {
         const filterQuery = this.whereToFilterQuery( where )
         await this.db.collection( this.collectionName ).deleteOne( filterQuery )
     }
 
     // ToOneRelation
-    public async findOneByRelation( foreignKey: string, foreignId: string ): Promise<any> {
+    public async findOneByRelation( foreignKey: string, foreignId: string ): Promise<unknown> {
         return await this.findOneInCollection( { [foreignKey]: foreignId } )
     }
 
     // ToOneRelation
-    public async updateOneRelation( id: string, foreignKey: string, foreignId: string ): Promise<any> {
+    public async updateOneRelation(
+        id: string,
+        foreignKey: string,
+        foreignId: string
+    ): Promise<void> {
         await Promise.all( [
             this.db.collection( this.collectionName ).updateOne(
                 { [foreignKey]: foreignId },

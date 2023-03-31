@@ -27,11 +27,6 @@ const parserOrder = ( order: Record<string, any> ) => {
 
 export default class OrderInputPlugin implements Plugin {
     public visitModel( model: Model, context: Context ): void {
-        // object type model dont need whereInput
-        if ( model.isObjectType() ) {
-            return
-        }
-
         // list model
         const { root } = context
 

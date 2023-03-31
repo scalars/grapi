@@ -25,10 +25,6 @@ export default class DeletePlugin implements Plugin {
     }
 
     public visitModel( model: Model, context: Context ): void {
-        // object type model dont need delete mutation
-        if ( model.isObjectType() ) {
-            return
-        }
         const { root } = context
         // Find if authDirective is enable
         const directives = model.getDirectives( DirectiveModelAction.Delete )
@@ -40,8 +36,6 @@ export default class DeletePlugin implements Plugin {
     }
 
     public resolveInMutation( { model, dataSource }: {model: Model; dataSource: ListMutable} ): any {
-        // object type model dont need delete mutation
-        if ( model.isObjectType() ) { return }
         const inputName = DeletePlugin.getInputName( model )
         const wrapDelete = get( this.hook, [ model.getName(), 'wrapDelete' ] )
 

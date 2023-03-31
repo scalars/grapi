@@ -1,6 +1,6 @@
 {
   "name": "@grapi/mongodb",
-  "version": "2.2.10",
+  "version": "3.0.1",
   "description": "The mongodb package of Grapi",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -24,7 +24,7 @@
   "scripts": {
     "clean": "yarn rimraf lib && yarn rimraf tsconfig.release.tsbuildinfo",
     "build": "yarn clean && yarn tsc --build ./tsconfig.release.json",
-    "test": "yarn run mocha --timeout 100000 --compilers ts:ts-node/register --recursive \"test/**/*.spec.ts\"",
+    "test": "yarn mocha --timeout 100000 --require ts-node/register --recursive --exit \"test/**/*.spec.ts\"",
     "test:grep": "yarn run mocha --compilers ts:ts-node/register --recursive",
     "coverage": "yarn run nyc yarn run test",
     "watch": "yarn run build -- --watch",
@@ -35,14 +35,14 @@
   "author": "madrov",
   "license": "Apache-2.0",
   "dependencies": {
-    "@grapi/server": "^2.2.10",
-    "mongodb": "^3.6.9",
-    "mongodb-client-encryption": "^1.2.4"
+    "@grapi/server": "^3.0.1",
+    "mongodb": "^4.6.0"
   },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
+    "@types/mongodb": "^4.0.7",
     "rimraf": "^2.6.2"
   }
 }
