@@ -53,8 +53,8 @@ import { ApolloServer } from 'apollo-server'
 
 const getDataSource = async () => {
     const datasource = new MongodbDataSourceGroup(
-        process.env.MONGO_URI,
-        process.env.MONGO_DATA_BASE_NAME
+        process.env.MONGO_URI as string,
+        process.env.MONGO_DATA_BASE_NAME as string
     )
     await datasource.initialize()
     return datasource
@@ -81,53 +81,6 @@ startGraphQLServer()
 Run server
 ```
 yarn ts-node server.ts 
-```
-
-**Grapi for JavaScript**
-```shell
-yarn init
-yarn add @grapi/server @grapi/mongodb
-yarn add apollo-server
-```
-
-```javascript
-// server.js
-const { readFileSync } = require( 'fs' )
-const { resolve } = require( 'path' )
-const { MongodbDataSourceGroup } = require( '@grapi/mongodb' )
-const { Grapi } = require( '@grapi/server' )
-const { ApolloServer } = require( 'apollo-server' )
-
-const getDataSource = async () => {
-    const datasource = new MongodbDataSourceGroup(
-        process.env.MONGO_URI,
-        process.env.MONGO_DATA_BASE_NAME
-    )
-    await datasource.initialize()
-    return datasource
-}
-
-const startGraphQLServer = async () => {
-    const datasource = await getDataSource()
-    const sdl = readFileSync( resolve( __dirname, 'schema.graphql' ) ).toString()
-    const grapi = new Grapi( {
-        sdl,
-        dataSources: {
-            datasource: ( args ) => datasource.getDataSource( args.key ),
-        }
-    } )
-    const server = new ApolloServer( grapi.createApolloConfig() )
-    server.listen().then( ( { url } ) => {
-        console.info( `GraphQL Server On: ${ url }` )
-        console.info( `Go To Browser And See PlayGround` )
-    } )
-}
-
-startGraphQLServer()
-```
-Run server
-```
-node server.js
 ```
 
 #### You can see the GraphQL server in action with
@@ -278,23 +231,10 @@ type Movie @Model( dataSource: "datasource", key: "Movie" ) {
     </a>
 </div>
 
-## Inspired By
-
-<div>
-
-<a href="https://github.com/Canner/gqlify">
-    <img 
-        src="https://raw.githubusercontent.com/Canner/gqlify/master/resources/logo-pink.svg"
-        width="10%">
-</a>
-
-</div>
 
 ## License
 
 Apache-2.0
 
-![footer banner](https://madrov.com/favicon.ico)
 
-
-Madrov Team
+With remote love from Colombia
