@@ -35,7 +35,7 @@
   "author": "madrov",
   "license": "Apache-2.0",
   "dependencies": {
-    "@grapi/server": "^3.0.1",
+    "@grapi/server": "^3.0.4",
     "mongodb": "^5.1.0"
   },
   "publishConfig": {
