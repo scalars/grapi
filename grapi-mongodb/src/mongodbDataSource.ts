@@ -113,7 +113,8 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         sourceSideName: string,
         targetSideName: string,
         sourceSideId: string,
-        targetSideId: string ): Promise<void> {
+        targetSideId: string
+    ): Promise<void> {
         const relationTableName = `_${sourceSideName}_${targetSideName}`
         await this.db.collection( relationTableName ).updateOne(
             { sourceSideId },
@@ -122,7 +123,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
                     sourceSideId,
                 },
                 $push: {
-                    targetSideIds: targetSideId,
+                    targetSideIds: targetSideId as never,
                 },
             },
             { upsert: true },
@@ -139,7 +140,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
             { sourceSideId },
             {
                 $pull: {
-                    targetSideIds: targetSideId,
+                    targetSideIds: targetSideId as never,
                 },
             },
         )

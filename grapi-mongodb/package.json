@@ -1,6 +1,6 @@
 {
   "name": "@grapi/mongodb",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "The mongodb package of Grapi",
   "main": "./lib/index.js",
   "module": "./lib/index.js",
@@ -36,7 +36,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@grapi/server": "^3.0.4",
-    "mongodb": "^5.1.0"
+    "mongodb": "^6.17.0"
   },
   "publishConfig": {
     "access": "public"
