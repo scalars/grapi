@@ -16,7 +16,7 @@ import {
     WhereOperator
 } from '@grapi/server'
 import { FilterListObject } from '@grapi/server/lib/dataModel/type'
-import { Db, Filter } from 'mongodb'
+import { Db, Filter, ObjectId } from 'mongodb'
 
 import {
     assign,
@@ -48,7 +48,7 @@ export class MongodbData {
         return this.db.collection( this.collectionName ).findOne( filterQuery )
     }
 
-    public async findInCollection( filterQuery: Filter<unknown>, orderBy = {}, pagination: Pagination = {} ): Promise<any[]> {
+    public async findInCollection( filterQuery: Filter<unknown>, orderBy = {}, pagination: Pagination = {} ): Promise<unknown[]> {
         return await this.db.collection( this.collectionName )
             .find( filterQuery )
             .sort( orderBy )
@@ -58,7 +58,7 @@ export class MongodbData {
             .toArray()
     }
 
-    public async findRecursive ( where: Record<string, any>, orderBy: OrderBy, pagination: Pagination, data: any[] = [] ): Promise<any[]> {
+    public async findRecursive ( where: Record<string, any>, orderBy: OrderBy, pagination: Pagination, data: unknown[] = [] ): Promise<unknown[]> {
         let iteration: number = 0
         await iterateWhereFilter( where, async ( whereFilter: ( Record<string, RelationWhere> | Array<Record<string, RelationWhere>> ), operator: ( Operator | WhereOperator ) ) => {
             if ( operator as WhereOperator === WhereOperator.relation ) {
@@ -85,7 +85,7 @@ export class MongodbData {
                 if ( isEmpty( relationFilters ) === false ) {
                     let baseFiltersOrAnd = []
                     forEach( relationFilters, ( item: RelationWhere ) => {
-                        forEach( item, ( value: Record<string, any>, key: string ) => {
+                        forEach( item, ( value: Record<string, unknown>, key: string ) => {
                             if ( ! get( value, 'relation' ) ) {
                                 delete item[key]
                                 baseFiltersOrAnd.push( { [key]: value } )
@@ -96,7 +96,7 @@ export class MongodbData {
                     const whereFiltersOrAnd = this.whereToFilterQuery(
                         baseFiltersOrAnd as any, operator as any
                     )
-                    const dataCollection: any[] = await this.findInCollection( whereFiltersOrAnd )
+                    const dataCollection: Array<unknown> = await this.findInCollection( whereFiltersOrAnd )
                     if ( operator === Operator.or ) {
                         for ( const itemWhere of relationFilters ) {
                             data = concat( data, await this.executeRelationFilters( itemWhere, dataCollection ) )
@@ -115,8 +115,8 @@ export class MongodbData {
     }
 
     // eslint-disable-next-line max-lines-per-function
-    public async executeRelationFilters( where: Record<string, RelationWhere>, data: any[], filtered: any[] = [] ): Promise<any[]> {
-        for ( const item of data ) {
+    public async executeRelationFilters( where: Record<string, RelationWhere>, data: unknown[], filtered: unknown[] = [] ): Promise<unknown[]> {
+        for ( const item of data as Array<{ id: string }> ) {
             // eslint-disable-next-line max-lines-per-function
             const filter: boolean = await iterateRelationsWhere( where,  async ( relationWhere: RelationWhere ): Promise<boolean> => {
                 const relation: RelationWhereConfig = relationWhere.relation
@@ -127,7 +127,7 @@ export class MongodbData {
                 const { filters, targetKey } = relationWhere
                 const { list, ship, source, target, filter, foreignKey } = relation || {}
                 if ( list ) {
-                    let relationData: any[]
+                    let relationData: unknown[]
                     const isManyToMany = ship === RelationShip.ManyToMany
                     const foreignKeyValue = foreignKey || `${toLower( source )}Id`
                     if ( isManyToMany ) {
@@ -174,7 +174,7 @@ export class MongodbData {
                     }
 
                     if ( filterWhere && isEmpty( relations ) === false ) {
-                        const recursive: Array<any> = await  this.executeRelationFilters( relations, relationData )
+                        const recursive: Array<unknown> = await  this.executeRelationFilters( relations, relationData )
                         return isEmpty( recursive ) === false
                     }
                     return filterWhere
@@ -223,7 +223,7 @@ export class MongodbData {
      * @param colectionName: Nombre de la collección a donde ha referenciado el objeto
      * @param where: Filtro con el Id Del Objeto Referenciado, ademas de los filtros aplicados sobre el objeto
      */
-    public async findOneRelation( colectionName: string, where: Where ): Promise<any> {
+    public async findOneRelation( colectionName: string, where: Where ): Promise<unknown> {
         return await this.db.collection( colectionName ).findOne( this.whereToFilterQuery( where ) )
     }
 
@@ -234,7 +234,7 @@ export class MongodbData {
      * @param collectionName Nombre de la colección donde se hace referencia al objeto Parent
      * @param where Filtro a aplicar en los muchos objetos
      */
-    public async findManyRelation( foreignKey: string, foreignId: string, collectionName: string, where: Where ): Promise<any[]> {
+    public async findManyRelation( foreignKey: string, foreignId: string, collectionName: string, where: Where ): Promise<unknown[]> {
         const filterQuery: Filter<unknown> = this.whereToFilterQuery( { ...where, [foreignKey]: { [Operator.eq]: foreignId } } )
         return await this.db.collection( collectionName )
             .find( filterQuery )
@@ -269,7 +269,7 @@ export class MongodbData {
 
     public whereToFilterQuery( where: Where, operator: Operator = undefined ): Filter<Record<string, unknown>> {
         const filterQuery: Record<string, unknown> = {}
-        const whereCallback = ( field: string, operator: Operator, value: any ): void => {
+        const whereCallback = ( field: string, operator: Operator, value: unknown & { to: unknown, from: unknown } ): void => {
             switch ( operator ) {
             case Operator.eq:
                 filterQuery[field] = value
@@ -338,7 +338,7 @@ export class MongodbData {
         return {}
     }
 
-    public transformMutation = ( mutation: Mutation, set: boolean = false ): Record<string, any> => {
+    public transformMutation = ( mutation: Mutation, set: boolean = false ): Record<string, unknown> => {
         const payload = set ? { $set: mutation.getData() } : mutation.getData()
         mutation.getArrayOperations().forEach( operation => {
             const { fieldName, operator, value } = operation
