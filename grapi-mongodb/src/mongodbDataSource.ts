@@ -18,8 +18,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
     }
 
     public async find( args?: ListFindQuery ): Promise<PaginatedResponse> {
-        // TODO Make orderBy better, admit multiple order
-        const { pagination, where, orderBy = {} } = args || {} as any
+        const { pagination, where, orderBy = {} } = args || {}
         return {
             data: await this.findRecursive( where, orderBy, pagination ),
             total: null,
@@ -32,28 +31,28 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         return await this.findOneInCollection( this.whereToFilterQuery( where ) )
     }
 
-    public async findOneById( id: string ): Promise<any> {
-        return await this.findOneInCollection( this.whereToFilterQuery( { id: { [Operator.eq]: id } } ) )
+    public async findOneById( id: string ): Promise<unknown> {
+        return await this.findOneInCollection( { _id: new ObjectId( id ) } )
     }
 
     public async create( mutation: Mutation ): Promise<unknown> {
         const payload = this.transformMutation( mutation )
         try {
-            const insertResult = await this.db.collection( this.collectionName ).insertOne( payload )
-            const insertedItem: { _id: ObjectId } = { _id: insertResult.insertedId }
-            if ( insertedItem ) {
-                await this.db.collection( this.collectionName ).updateOne(
-                    { _id: insertedItem._id },
-                    { $set: { id: insertedItem._id.toString() } }
-                )
-                return await this.findOneInCollection( { id: insertedItem._id.toString() } )
+            const insertId = new ObjectId()
+            const insertResult = await this.db
+                .collection( this.collectionName )
+                .insertOne( { ...payload,  _id: insertId, id: insertId.toString()  } )
+            if ( insertResult ) {
+                return this.db
+                    .collection( this.collectionName )
+                    .findOne( { _id: insertId } )
             }
         } catch ( error ) {
             this.handleMongoDbError( error )
         }
     }
 
-    public async update( where: Where, mutation: Mutation ): Promise<any> {
+    public async update( where: Where, mutation: Mutation ): Promise<unknown> {
         const payload = this.transformMutation( mutation, true )
         const filterQuery = this.whereToFilterQuery( where )
         if ( isEmpty( payload ) === false ) {
@@ -95,7 +94,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
     }
 
     // OneToManyRelation
-    public async findManyFromOneRelation( { where, orderBy }: ListFindQuery ): Promise<any[]> {
+    public async findManyFromOneRelation( { where, orderBy }: ListFindQuery ): Promise<unknown[]> {
         return await this.findRecursive( where, orderBy, {} )
     }
 
@@ -105,7 +104,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         targetSideName: string,
         sourceSideId: string,
         { where, orderBy }: ListFindQuery
-    ): Promise<any[]> {
+    ): Promise<unknown[]> {
         const relationTableName = `_${sourceSideName}_${targetSideName}`
         const relationData = await this.db.collection( relationTableName ).findOne( { sourceSideId } )
         const relationIds = get( relationData, `targetSideIds`, [] )
@@ -119,14 +118,14 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         targetSideId: string
     ): Promise<void> {
         const relationTableName = `_${sourceSideName}_${targetSideName}`
-        await this.db.collection( relationTableName ).updateOne(
+        await this.db.collection<{ sourceSideId: string, targetSideIds: Array<string> }>( relationTableName ).updateOne(
             { sourceSideId },
             {
                 $set: {
                     sourceSideId,
                 },
                 $push: {
-                    targetSideIds: targetSideId as never,
+                    targetSideIds: targetSideId,
                 },
             },
             { upsert: true },
@@ -139,11 +138,13 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         sourceSideId: string,
         targetSideId: string ): Promise<void> {
         const relationTableName = `_${sourceSideName}_${targetSideName}`
-        await this.db.collection( relationTableName ).updateOne(
-            { sourceSideId },
+        await this.db.collection<{ sourceSideId: string, targetSideIds: Array<string> }>( relationTableName ).updateOne(
+            { 
+                sourceSideId
+            },
             {
                 $pull: {
-                    targetSideIds: targetSideId as never,
+                    targetSideIds: targetSideId,
                 },
             },
         )
