@@ -53,7 +53,7 @@ export class MongodbData {
             .find( filterQuery )
             .sort( orderBy )
             .skip( pagination.skip || 0 )
-            .limit( pagination.take || 0 )
+            .limit( pagination.first || 0 )
             .project( { _id: 0 } )
             .toArray()
     }
@@ -62,7 +62,7 @@ export class MongodbData {
         let iteration: number = 0
         await iterateWhereFilter( where, async ( whereFilter: ( Record<string, RelationWhere> | Array<Record<string, RelationWhere>> ), operator: ( Operator | WhereOperator ) ) => {
             if ( operator as WhereOperator === WhereOperator.relation ) {
-                data = isEmpty( data ) && iteration === 0 ? await this.findInCollection( {}, orderBy ) : data
+                data = isEmpty( data ) && iteration === 0 ? await this.findInCollection( {}, orderBy, pagination ) : data
                 data = await this.executeRelationFilters( whereFilter as Record<string, RelationWhere>, data )
             } else {
                 const baseFilters: unknown[] = []
