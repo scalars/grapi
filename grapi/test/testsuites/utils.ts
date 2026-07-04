@@ -1,4 +1,4 @@
-import { ApolloServer } from 'apollo-server'
+import { ApolloServer } from '@apollo/server'
 import { GraphQLScalarType } from 'graphql'
 import { isArray, mapValues } from 'lodash'
 
@@ -19,7 +19,8 @@ export const createApp = ( { sdl, dataSources, scalars, }: {
     const grapi = new Grapi( { sdl, dataSources, scalars } )
     const server = new ApolloServer( grapi.createApolloConfig() )
     const graphqlRequest = async ( query: string, variables: Record<string, unknown> ): Promise<any> => {
-        const { data = {}, errors } = await server.executeOperation( { query, variables } )
+        const result = await server.executeOperation( { query, variables } )
+        const { data, errors } = result.body.kind === 'single' ? result.body.singleResult : { data: null, errors: null }
         return {
             ...data,
             errors
@@ -44,8 +45,8 @@ export const prepareConfig = (): any => {
     let serviceAccount: Record<string, any>
 
     if ( process.env.CI ) {
-        mongoUri = process.env.TEST_MONGODB_URI
-        serviceAccount = JSON.parse( process.env.TEST_SERVICE_ACCOUNT )
+        mongoUri = process.env.TEST_MONGODB_URI || ''
+        serviceAccount = JSON.parse( process.env.TEST_SERVICE_ACCOUNT || '{}')
     } else {
         // local dev
         mongoUri = 'mongodb://localhost:27017'
