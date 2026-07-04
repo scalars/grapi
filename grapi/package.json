@@ -22,21 +22,22 @@
     "lib"
   ],
   "scripts": {
-    "clean": "yarn rimraf lib && yarn rimraf tsconfig.release.tsbuildinfo",
-    "build": "yarn clean && yarn tsc --build ./tsconfig.release.json",
-    "test": "yarn mocha --timeout 100000 --require ts-node/register --recursive --exit \"test/**/*.spec.ts\"",
-    "test:grep": "yarn mocha --compilers ts:ts-node/register --recursive --exit",
-    "coverage": "yarn nyc && yarn test",
-    "watch": "yarn build -- --watch",
-    "watch:test": "yarn test -- --watch",
-    "prepublishOnly": "cp ../readme.md . && yarn clean && yarn build",
-    "postpublish": "yarn rimraf readme.md"
+    "clean": "npx rimraf lib && npx rimraf tsconfig.release.tsbuildinfo",
+    "build": "npm run clean && npx tsc --build ./tsconfig.release.json",
+    "test": "npx mocha --timeout 100000 --require ts-node/register --recursive --exit \"test/**/*.spec.ts\"",
+    "test:grep": "npx mocha --compilers ts:ts-node/register --recursive --exit",
+    "test:run": "npx ts-node --project ../tsconfig.json test/testing.ts",
+    "coverage": "npx nyc && npm run test",
+    "watch": "npm run build -- --watch",
+    "watch:test": "npm run test -- --watch",
+    "prepublishOnly": "cp ../readme.md . && npm run clean && npm run build",
+    "postpublish": "npx rimraf readme.md"
   },
   "dependencies": {
-    "@graphql-tools/schema": "^10.0.23",
-    "@graphql-tools/utils": "^10.8.6",
+    "@graphql-tools/schema": "^10.0.34",
+    "@graphql-tools/utils": "^11.1.0",
     "chalk": "^5.4.1",
-    "graphql": "^16.11.0",
+    "graphql": "^16.14.0",
     "lodash": "^4.17.21",
     "pluralize": "^8.0.0",
     "validator": "^13.15.15"
@@ -44,7 +45,7 @@
   "author": "madrov",
   "license": "ISC",
   "devDependencies": {
-    "apollo-server": "^3.13.0",
+    "@apollo/server": "^5.5.0",
     "rimraf": "^4.4.1"
   },
   "peerDependencies": {

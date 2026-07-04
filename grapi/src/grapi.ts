@@ -1,5 +1,5 @@
 import { makeExecutableSchema } from '@graphql-tools/schema'
-import { Config, Context, ContextFunction } from 'apollo-server-core'
+import { ApolloServerOptions, BaseContext } from '@apollo/server'
 import { GraphQLEnumType, GraphQLScalarType } from 'graphql'
 
 import { MODEL_DIRECTIVE, MODEL_DIRECTIVE_SOURCE_NAME } from './constants'
@@ -39,11 +39,11 @@ export class Grapi {
     private readonly scalars: Record<string, GraphQLScalarType>;
     private readonly enums: Record<string, GraphQLEnumType>;
     private readonly schemaDirectives: Record<string, unknown>;
-    private readonly context: Context | ContextFunction;
+    private readonly context: BaseContext | ((...args: any[]) => Promise<any>);
     private readonly rootNode: RootNode;
     private readonly models: Model[];
     private readonly userDefinedPlugins: Plugin[];
-    private config: Config;
+    private config: ApolloServerOptions<BaseContext>;
     private readonly skipPrint: boolean;
 
     constructor( {
@@ -62,7 +62,7 @@ export class Grapi {
         dataSources?: Record<string, ( args: { key: string } ) => DataSource>;
         scalars?: Record<string, GraphQLScalarType>;
         enums?: Record<string, GraphQLEnumType>;
-        context?: Context | ContextFunction;
+        context?: BaseContext | ((...args: any[]) => Promise<any>);
         skipPrint?: boolean;
         rootNode?: RootNode;
         models?: Model[];
@@ -172,11 +172,19 @@ export class Grapi {
                 resolvers: assign( resolvers, this.scalars ),
                 typeDefs: typeDefs.concat( scalarSchema ),
             } ),
-            context: this.context
         }
     }
 
-    public createApolloConfig(): Config {
+    public createApolloConfig(): ApolloServerOptions<BaseContext> {
         return this.config
+    }
+
+    /**
+     * Returns the context function/object to be used with Apollo middleware.
+     * In Apollo Server 5, context is provided to the integration middleware,
+     * not to the server constructor.
+     */
+    public getContext(): BaseContext | ((...args: any[]) => Promise<any>) {
+        return this.context
     }
 }
