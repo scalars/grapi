@@ -22,14 +22,14 @@
     "lib"
   ],
   "scripts": {
-    "clean": "yarn rimraf lib && yarn rimraf tsconfig.release.tsbuildinfo",
-    "build": "yarn clean && yarn tsc --build ./tsconfig.release.json",
-    "test": "yarn mocha --timeout 100000 --require ts-node/register --recursive --exit \"test/**/*.spec.ts\"",
-    "test:grep": "yarn run mocha --compilers ts:ts-node/register --recursive",
-    "coverage": "yarn run nyc yarn run test",
-    "watch": "yarn run build -- --watch",
-    "watch:test": "yarn run test -- --watch",
-    "prepublishOnly": "yarn run clean && yarn run build"
+    "clean": "npx rimraf lib && npx rimraf tsconfig.release.tsbuildinfo",
+    "build": "npm run clean && npx tsc --build ./tsconfig.release.json",
+    "test": "npx mocha --timeout 100000 --require ts-node/register --recursive --exit \"test/**/*.spec.ts\"",
+    "test:grep": "npx run mocha --compilers ts:ts-node/register --recursive",
+    "coverage": "npx run nyc && npm run test",
+    "watch": "npm run build -- --watch",
+    "watch:test": "npm run test -- --watch",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "repository": "https://github.com/scalars/grapi",
   "author": "madrov",
