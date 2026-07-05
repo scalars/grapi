@@ -6,7 +6,6 @@
 import { ListReadable } from '..'
 import Model from '../dataModel/model'
 import { pick } from '../lodash'
-import BaseTypePlugin from './baseType'
 import { Context, Plugin } from './interface'
 import WhereInputPlugin from './whereInput'
 
@@ -22,15 +21,15 @@ const parsePaginationFromArgs = ( args: Record<string, any> ): any => {
 // };
 
 export default class RelayPlugin implements Plugin {
-    private whereInputPlugin: WhereInputPlugin;
-    private baseTypePlugin: BaseTypePlugin;
+    private whereInputPlugin!: WhereInputPlugin
+    // private baseTypePlugin: BaseTypePlugin
 
 
     public setPlugins( plugins: Plugin[] ): void {
         this.whereInputPlugin = plugins.find(
             plugin => plugin instanceof WhereInputPlugin ) as WhereInputPlugin
-        this.baseTypePlugin = plugins.find(
-            plugin => plugin instanceof BaseTypePlugin ) as BaseTypePlugin
+        // this.baseTypePlugin = plugins.find(
+        //     plugin => plugin instanceof BaseTypePlugin ) as BaseTypePlugin
     }
 
     public visitModel( model: Model, context: Context ): void {
@@ -59,9 +58,15 @@ export default class RelayPlugin implements Plugin {
             [queryName]: async ( _root, args, context ): Promise<any> => {
                 const where = this.whereInputPlugin.parseWhere( args.where, model )
                 const pagination = parsePaginationFromArgs( args )
+                // return {
+                //    data: await this.findRecursive( where, orderBy, pagination ),
+                //    total: null,
+                //    hasNextPage: false,
+                //    hasPreviousPage: false
+                // }
                 const response = await dataSource.find( { where, pagination }, context )
                 return {
-                    total: response.total,
+                    totalCount: response.total,
                     // pageInfo: {
                     //     hasNextPage: response.hasNextPage,
                     //     hasPreviousPage: response.hasPreviousPage,
