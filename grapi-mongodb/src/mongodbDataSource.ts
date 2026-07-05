@@ -3,6 +3,7 @@ import {
     ListFindQuery,
     Mutation,
     Operator,
+    paginate,
     PaginatedResponse,
     Where
 } from '@grapi/server'
@@ -19,12 +20,8 @@ export class MongodbDataSource extends MongodbData implements DataSource {
 
     public async find( args?: ListFindQuery ): Promise<PaginatedResponse> {
         const { pagination, where, orderBy = {} } = args || {}
-        return {
-            data: await this.findRecursive( where, orderBy, pagination ),
-            total: null,
-            hasNextPage: false,
-            hasPreviousPage: false
-        }
+        const data: any[] = await this.findRecursive( where, orderBy, pagination )
+        return paginate( data, pagination )
     }
 
     public async findOne( { where }: { where: Where } ): Promise<unknown> {

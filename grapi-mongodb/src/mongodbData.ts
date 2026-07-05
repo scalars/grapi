@@ -16,7 +16,7 @@ import {
     WhereOperator
 } from '@grapi/server'
 import { FilterListObject } from '@grapi/server/lib/dataModel/type'
-import { Db, Filter, ObjectId } from 'mongodb'
+import { Db, Filter } from 'mongodb'
 
 import {
     assign,
@@ -36,8 +36,8 @@ import {
 } from './lodash'
 
 export class MongodbData {
-    readonly db: Db;
-    readonly collectionName: string;
+    readonly db: Db
+    readonly collectionName: string
 
     constructor( db: Db, collectionName: string ) {
         this.db = db
@@ -53,7 +53,7 @@ export class MongodbData {
             .find( filterQuery )
             .sort( orderBy )
             .skip( pagination.skip || 0 )
-            .limit( pagination.first || 0 )
+            .limit( pagination.take || 0 )
             .project( { _id: 0 } )
             .toArray()
     }
@@ -355,7 +355,7 @@ export class MongodbData {
             }
         } )
         return payload
-    };
+    }
 
     public handleMongoDbError ( error ): void {
         if ( error.code === 11000 ) {
