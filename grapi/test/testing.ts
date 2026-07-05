@@ -1,4 +1,5 @@
-import { ApolloServer } from '@apollo/server'
+import { ApolloServer, } from '@apollo/server'
+import { startStandaloneServer } from '@apollo/server/standalone'
 
 import { MongodbDataSourceGroup } from '../../grapi-mongodb/src'
 import { Grapi } from '../src'
@@ -56,13 +57,13 @@ export const testingGrapi = async ( ): Promise<void> => {
     } } )
     const server = new ApolloServer( grapi.createApolloConfig() )
 
-    const params = { 'variables':{ 'first':2 }, 'query':'query ($first: Int $where: ExpenseWhereInput) {\n  expenses(first: $first, skip: 2, orderBy: {date: DESC}, where: $where) {\n    id\n    date\n    value\n    description\n    subcategory {\n      name\n      id\n    }\n  }\n}' }
-    const result = await server.executeOperation( params, {
-        contextValue: { user: { id: '1', role: 'admin' } },
+    const { url } = await startStandaloneServer( server, {
+        listen: { port: 4000 },
     } )
-    const { data, errors } = result.body.kind === 'single' ? result.body.singleResult : { data: null, errors: null }
-    console.error( data, errors ? errors[0] : null )
+
+    // eslint-disable-next-line no-console
+    console.info( `🚀 Server ready at ${url}` )
 }
 
 
-testingGrapi().then( () => process.exit( 0 ) )
+testingGrapi().then()
