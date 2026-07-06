@@ -1,5 +1,7 @@
 import { IObjectTypeResolver } from '@graphql-tools/utils'
 
+import { RelationWhere } from '../helper'
+
 export interface Pagination {
     // cursor base
     last?: number;
@@ -55,7 +57,29 @@ export enum OrderType {
     DESC = -1
 }
 
-export type Where = Record<string, Record<string /** Operator */, any>>;
+export type RawWhereFilter = string | Array<string> | boolean | number | Array<number> | Array<RawWhere>;
+
+export interface RawWhere {
+    [key: string]: RawWhereFilter | RawWhere | undefined;
+    some?: [RawWhere];
+    none?: [RawWhere];
+    every?: RawWhere;
+    [Operator.or]?: [RawWhere];
+    [Operator.and]?: [RawWhere];
+}
+
+export type WhereOperatorValue = string | Array<string> | boolean | number | Array<number>
+
+export type WhereFilter = { [op in Operator]: WhereOperatorValue } | Array<Where>;
+
+export interface Where {
+    [fieldname: string]: RelationWhere | WhereFilter | Where | undefined;
+    some?: [Where];
+    none?: [Where];
+    every?: [Where];
+    [Operator.or]?: [Where];
+    [Operator.and]?: [Where];
+}
 
 export type OrderBy = Record<string, OrderType>
 
