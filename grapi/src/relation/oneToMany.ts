@@ -1,4 +1,4 @@
-import { ListFindQuery, Operator, OrderInputPlugin, WhereInputPlugin } from '..'
+import { ListFindQuery, Operator, OrderInputPlugin, WhereFilter, WhereInputPlugin } from '..'
 import { Model, RelationType } from '../dataModel'
 import { get, isEmpty } from '../lodash'
 import { InputRecursiveRelation } from './index'
@@ -9,13 +9,13 @@ const createForeignKey = ( model: Model ): string => `${model.getNamings().singu
 // one-to-many, can be used for unidirectional and bidirectional
 // put a foreign key on many side
 export default class OneToMany implements Relation, WithForeignKey {
-    private oneSideModel: Model;
-    private manySideModel: Model;
-    private oneSideField: string;
+    private oneSideModel: Model
+    private manySideModel: Model
+    private oneSideField: string
     // exists if it's bidirectional
-    private manySideField?: string;
+    private manySideField?: string
     // foreignKey will be on many side
-    private foreignKey: string;
+    private foreignKey: string
 
     constructor( {
         oneSideModel,
@@ -93,7 +93,7 @@ export default class OneToMany implements Relation, WithForeignKey {
 
     public async addIdFromOneSide( oneSideId: string, manySideId: string, context: any ): Promise<void> {
         const mutation = this.manySideModel.getUpdateMutationFactory().createMutation( { [this.foreignKey]: oneSideId } )
-        await this.manySideModel.getDataSource().update( { id: { [Operator.eq]: manySideId } }, mutation, context )
+        await this.manySideModel.getDataSource().update( { id: { [Operator.eq]: manySideId } as WhereFilter }, mutation, context )
     }
 
     public async createAndAddFromOneSide( oneSideId: string, manySideData: any, context: any ): Promise<void> {
@@ -112,11 +112,11 @@ export default class OneToMany implements Relation, WithForeignKey {
 
     public async removeIdFromOneSide( oneSideId: string, manySideId: string, context: any ): Promise<void> {
         const mutation = this.manySideModel.getUpdateMutationFactory().createMutation( { [this.foreignKey]: null } )
-        await this.manySideModel.getDataSource().update( { id: { [Operator.eq]: manySideId } }, mutation, context )
+        await this.manySideModel.getDataSource().update( { id: { [Operator.eq]: manySideId } as WhereFilter }, mutation, context )
     }
 
     public async deleteRecordFromOneSide( manySideId: string, context: any ): Promise<void> {
-        await this.manySideModel.getDataSource().delete( { id: { [Operator.eq]: manySideId } }, context )
+        await this.manySideModel.getDataSource().delete( { id: { [Operator.eq]: manySideId } as WhereFilter }, context )
     }
 
     public async joinManyOnOneSide( data: Record<string, any>, argument: Record<string, any>, context: any ): Promise<any[]> {

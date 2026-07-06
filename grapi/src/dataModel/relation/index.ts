@@ -1,12 +1,12 @@
 import { RELATION_DIRECTIVE_NAME, RELATION_WITH } from '../../constants'
 import { forEach, get, mapValues, size } from '../../lodash'
 import { Field, Model } from '..'
-import RelationField from '../relationField'
+import RelationField, { RelationConfig } from '../relationField'
 import { ModelRelation, RelationShip, RelationType } from './types'
 
 const createDefaultRelationName = ( relationConfig: Partial<ModelRelation> ): string => {
-    const sourceName = relationConfig.source.getNamings().capitalSingular
-    const targetName = relationConfig.target.getNamings().capitalSingular
+    const sourceName = relationConfig.source?.getNamings().capitalSingular
+    const targetName = relationConfig.target?.getNamings().capitalSingular
     return `${sourceName}And${targetName}On${relationConfig.sourceField}`
 }
 
@@ -60,7 +60,7 @@ const configRelationFields = (
 
 // eslint-disable-next-line max-lines-per-function
 export const createRelation = ( models: Model[] ): ModelRelation[] => {
-    const findModel = ( name: string ): Model => models.find( model => model.getName() === name )
+    const findModel = ( name: string ): Model => models.find( model => model.getName() === name )!
     // final return of this function
     const modelRelations: ModelRelation[] = []
     // relations without name would be collected to table
@@ -132,7 +132,7 @@ export const createRelation = ( models: Model[] ): ModelRelation[] => {
                 source: sourceSide.sourceModel,
                 target: sourceSide.targetModel,
                 sourceField: sourceSide.fieldName,
-                metadata: get( metadata, RELATION_WITH ) ? mapValues( sourceField.getRelationConfig(), ( value ) => {
+                metadata: get( metadata, RELATION_WITH ) ? mapValues( sourceField.getRelationConfig(), ( value: RelationConfig ) => {
                     if ( value instanceof Object ) { return value.key } return value
                 } ) : metadata
             }

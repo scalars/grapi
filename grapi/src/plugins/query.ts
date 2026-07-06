@@ -18,9 +18,9 @@ const parsePaginationFromArgs = ( args: Record<string, any> ): any => {
 }
 
 export default class QueryPlugin implements Plugin {
-    private whereInputPlugin: WhereInputPlugin;
-    private orderInputPlugin: OrderInputPlugin;
-    private baseTypePlugin: BaseTypePlugin;
+    private whereInputPlugin!: WhereInputPlugin
+    private orderInputPlugin!: OrderInputPlugin
+    private baseTypePlugin!: BaseTypePlugin
 
     public setPlugins( plugins: Plugin[] ): void {
         this.whereInputPlugin = plugins.find(

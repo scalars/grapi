@@ -40,12 +40,14 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { MongodbDataSourceGroup } from '@grapi/mongodb'
 import { Grapi } from '@grapi/server'
-import { ApolloServer } from 'apollo-server'
+import { ApolloServer } from '@apollo/server'
+import { startStandaloneServer } from '@apollo/server/standalone'
+
 
 const getDataSource = async () => {
     const datasource = new MongodbDataSourceGroup(
-        process.env.MONGO_URI,
-        process.env.DATA_BASE_NAME
+        process.env.MONGO_URI as string,
+        process.env.MONGO_DATA_BASE_NAME as string
     )
     await datasource.initialize()
     return datasource
@@ -61,10 +63,10 @@ const startGraphQLServer = async () => {
         }
     } )
     const server = new ApolloServer( grapi.createApolloConfig() )
-    server.listen().then( ( { url } ) => { 
-        console.info( `GraphQL Server On: ${ url }` )
-        console.info( `Go To Browser And See PlayGround` )
+    const { url } = await startStandaloneServer( server, {
+        listen: { port: 4000 },
     } )
+    console.info( `🚀 Server ready at ${url}` )
 }
 
 startGraphQLServer()
@@ -82,7 +84,5 @@ startGraphQLServer()
 
 Apache-2.0
 
-![footer banner](https://madrov.com/favicon.ico)
 
-
-Madrov Team
+With remote love from Colombia

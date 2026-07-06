@@ -11,7 +11,7 @@
 
 ## Installation
 ``` shell
-yarn add @grapi/server
+npm add @grapi/server
 ```
 
 ## Features
@@ -37,10 +37,10 @@ type Actor @Model( dataSource: "datasource", key: "Actor" ) {
 
 **Grapi for Typescript**
 ```shell
-yarn init
-yarn add @grapi/server @grapi/mongodb
-yarn add ts-node apollo-server 
-yarn add -D typescript
+npm init
+npm add @grapi/server @grapi/mongodb
+npm add ts-node @apollo/server 
+npm add -D typescript
 ```
 
 ```typescript
@@ -49,7 +49,9 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { MongodbDataSourceGroup } from '@grapi/mongodb'
 import { Grapi } from '@grapi/server'
-import { ApolloServer } from 'apollo-server'
+import { ApolloServer } from '@apollo/server'
+import { startStandaloneServer } from '@apollo/server/standalone'
+
 
 const getDataSource = async () => {
     const datasource = new MongodbDataSourceGroup(
@@ -70,17 +72,17 @@ const startGraphQLServer = async () => {
         }
     } )
     const server = new ApolloServer( grapi.createApolloConfig() )
-    server.listen().then( ( { url } ) => {
-        console.info( `GraphQL Server On: ${ url }` )
-        console.info( `Go To Browser And See PlayGround` )
+    const { url } = await startStandaloneServer( server, {
+        listen: { port: 4000 },
     } )
+    console.info( `🚀 Server ready at ${url}` )
 }
 
 startGraphQLServer()
 ```
 Run server
 ```
-yarn ts-node server.ts 
+npx ts-node server.ts 
 ```
 
 #### You can see the GraphQL server in action with

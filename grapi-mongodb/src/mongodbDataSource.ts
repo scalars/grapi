@@ -3,28 +3,21 @@ import {
     ListFindQuery,
     Mutation,
     Operator,
+    paginate,
     PaginatedResponse,
     Where
 } from '@grapi/server'
-import { Db, ObjectId } from 'mongodb'
+import { ObjectId } from 'mongodb'
 
 import { get, isEmpty } from './lodash'
 import { MongodbData } from './mongodbData'
 
 export class MongodbDataSource extends MongodbData implements DataSource {
 
-    constructor( db: Db, collectionName: string ) {
-        super( db, collectionName )
-    }
-
     public async find( args?: ListFindQuery ): Promise<PaginatedResponse> {
-        const { pagination, where, orderBy = {} } = args || {}
-        return {
-            data: await this.findRecursive( where, orderBy, pagination ),
-            total: null,
-            hasNextPage: false,
-            hasPreviousPage: false
-        }
+        const { pagination = {}, where = {}, orderBy = {} } = args || {}
+        const data: unknown[] = await this.findRecursive( where, orderBy, pagination )
+        return paginate( data, pagination )
     }
 
     public async findOne( { where }: { where: Where } ): Promise<unknown> {
@@ -39,14 +32,12 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         const payload = this.transformMutation( mutation )
         try {
             const insertId = new ObjectId()
-            const insertResult = await this.db
+            await this.db
                 .collection( this.collectionName )
-                .insertOne( { ...payload,  _id: insertId, id: insertId.toString()  } )
-            if ( insertResult ) {
-                return this.db
-                    .collection( this.collectionName )
-                    .findOne( { _id: insertId } )
-            }
+                .insertOne( { ...payload, _id: insertId, id: insertId.toString() } )
+            return await this.db
+                .collection( this.collectionName )
+                .findOne( { _id: insertId } )
         } catch ( error ) {
             this.handleMongoDbError( error )
         }
@@ -67,7 +58,11 @@ export class MongodbDataSource extends MongodbData implements DataSource {
 
     public async delete( where: Where ): Promise<void> {
         const filterQuery = this.whereToFilterQuery( where )
-        await this.db.collection( this.collectionName ).deleteOne( filterQuery )
+        try {
+            await this.db.collection( this.collectionName ).deleteOne( filterQuery )
+        } catch ( error ) {
+            this.handleMongoDbError( error )
+        }
     }
 
     // ToOneRelation
@@ -94,7 +89,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
     }
 
     // OneToManyRelation
-    public async findManyFromOneRelation( { where, orderBy }: ListFindQuery ): Promise<unknown[]> {
+    public async findManyFromOneRelation( { where = {}, orderBy = {} }: ListFindQuery ): Promise<unknown[]> {
         return await this.findRecursive( where, orderBy, {} )
     }
 
@@ -103,7 +98,7 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         sourceSideName: string,
         targetSideName: string,
         sourceSideId: string,
-        { where, orderBy }: ListFindQuery
+        { where, orderBy = {} }: ListFindQuery
     ): Promise<unknown[]> {
         const relationTableName = `_${sourceSideName}_${targetSideName}`
         const relationData = await this.db.collection( relationTableName ).findOne( { sourceSideId } )
@@ -138,15 +133,17 @@ export class MongodbDataSource extends MongodbData implements DataSource {
         sourceSideId: string,
         targetSideId: string ): Promise<void> {
         const relationTableName = `_${sourceSideName}_${targetSideName}`
-        await this.db.collection<{ sourceSideId: string, targetSideIds: Array<string> }>( relationTableName ).updateOne(
-            { 
-                sourceSideId
-            },
-            {
-                $pull: {
-                    targetSideIds: targetSideId,
+        try {
+            await this.db.collection<{ sourceSideId: string, targetSideIds: Array<string> }>( relationTableName ).updateOne(
+                { sourceSideId },
+                {
+                    $pull: {
+                        targetSideIds: targetSideId,
+                    },
                 },
-            },
-        )
+            )
+        } catch ( error ) {
+            this.handleMongoDbError( error )
+        }
     }
 }

@@ -1,11 +1,11 @@
-import { Operator, RelationWhere, Where } from '..'
+import { Operator, RawWhere, RelationWhere, Where, WhereFilter } from '..'
 import { MODEL_DIRECTIVE, MODEL_DIRECTIVE_SOURCE_KEY } from '../constants'
 import { RelationField } from '../dataModel'
 import Field from '../dataModel/field'
 import Model from '../dataModel/model'
 import { DataModelType, FilterListObject, FilterListScalar } from '../dataModel/type'
 import { RelationWhereConfig } from '../helper'
-import { forEach, get, isEmpty, map, mapValues, reduce, size } from '../lodash'
+import { forEach, get, isEmpty, map, mapValues, reduce } from '../lodash'
 import RootNode from '../rootNode'
 import { inputDateTimeBetweenName, inputFloatBetweenName, inputIntBetweenName } from './constants'
 import { Context, Plugin } from './interface'
@@ -61,13 +61,13 @@ export default class WhereInputPlugin implements Plugin {
         return WhereInputPlugin.parseWhereIterate( where, model )
     }
 
-    public static parseWhereIterate( where: Record<string, any>, model: Model ): Where {
-        return reduce( where, ( result, value, key ) => {
+    public static parseWhereIterate( rawWhere: RawWhere, model: Model ): Where {
+        return reduce( rawWhere, ( result: Where, value, key ) => {
             if ( key === Operator.or || key === Operator.and  ) {
-                value = map( value, ( where: Where ) => {
+                const listRelationWhere = map( value as Array<RawWhere>, ( where: RawWhere ) => {
                     return this.parseWhereIterate( where, model )
                 } )
-                return { [ key as Operator ]: value }
+                return { [ key as Operator ]: listRelationWhere }
             }
             let { operator } = WhereInputPlugin.getNameAndOperator( key )
             const { fieldName } = WhereInputPlugin.getNameAndOperator( key )
@@ -75,12 +75,12 @@ export default class WhereInputPlugin implements Plugin {
             if ( field && field.getType() === DataModelType.RELATION ) {
                 const relationTo: Model = field.getRelationTo()
                 const metadataField: Record<string, any> = parseRelationConfig( field.getRelationConfig( ) )
-                let filter: FilterListObject
+                let filter: FilterListObject | null = null
                 if ( field.isList() ) {
-                    if ( size( value ) > 1 ) {
+                    if ( Array.isArray( value ) && value.length > 1 ) {
                         throw new Error( `There can be only one input field named Filter${ field.getTypename() }` )
                     }
-                    const { some, none, every } = value
+                    const { some, none, every } = value as RawWhere
                     if ( some ) {
                         filter = FilterListObject.SOME
                     } else if ( none ) {
@@ -91,7 +91,7 @@ export default class WhereInputPlugin implements Plugin {
                     value = some || none || every
                 }
                 result[fieldName] = {
-                    filters: WhereInputPlugin.parseWhereIterate( value, relationTo ),
+                    filters: WhereInputPlugin.parseWhereIterate( value as RawWhere, relationTo ),
                     sourceKey: get( model.getMetadata( MODEL_DIRECTIVE ), MODEL_DIRECTIVE_SOURCE_KEY ),
                     targetKey: get( relationTo.getMetadata( MODEL_DIRECTIVE ), MODEL_DIRECTIVE_SOURCE_KEY ),
                     relation: {
@@ -111,10 +111,10 @@ export default class WhereInputPlugin implements Plugin {
                 throw new Error( `There can be only one input field named ${ fieldName }_${ operator }` )
             }
             if ( field.isList() ) {
-                if ( size( value ) > 1 ) {
+                if ( Array.isArray( value ) && value.length > 1 ) {
                     throw new Error( `There can be only one input field named Filter${ field.getTypename() }` )
                 }
-                const { has, hasNot } = value
+                const { has, hasNot } = value as RawWhere
                 if ( has ) {
                     operator = Operator.all
                 } else {
@@ -122,9 +122,9 @@ export default class WhereInputPlugin implements Plugin {
                 }
                 value = has || hasNot || []
             }
-            result[ fieldName ] = { [ operator ]: value }
+            result[ fieldName ] = { [ operator ]: value } as WhereFilter
             return result
-        }, {} as any )
+        }, {} as Where )
     }
 
     private static getNameAndOperator( field: string ): {fieldName: string; operator: Operator; object?: string} {
@@ -143,7 +143,7 @@ export default class WhereInputPlugin implements Plugin {
         const operator = field.slice( lastUnderscoreIndex + 1 )
 
         // validate the operator
-        const validOperator: Operator = Operator[operator]
+        const validOperator: Operator = Operator[ operator as keyof typeof Operator ]
         if ( !validOperator ) {
             throw new Error( `Operator ${operator} no support` )
         }
