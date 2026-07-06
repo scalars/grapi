@@ -11,10 +11,10 @@ export interface DataSourceGroup {
 }
 
 export class MongodbDataSourceGroup implements DataSourceGroup {
-    private readonly uri: string;
-    private readonly dbName: string;
-    private mongoClient: MongoClient;
-    private db: Db;
+    private readonly uri: string
+    private readonly dbName: string
+    private mongoClient!: MongoClient
+    private db!: Db
 
     constructor( uri: string, dbName: string ) {
         this.uri = uri
