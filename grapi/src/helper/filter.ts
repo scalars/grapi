@@ -1,27 +1,7 @@
-import { Operator, Where, WhereOperator } from '..'
+import { Operator, Where, WhereFilter, WhereOperator } from '..'
 import { RelationShip, RelationType } from '../dataModel/relation/types'
 import { FilterListObject } from '../dataModel/type'
-import { eq, filter as fpFilter, flow, gt, gte, lt, lte, placeholder } from '../lodash'
-import { forEach, get, has, isEmpty, keys, omit, transform } from '../lodash'
-
-const createFilterFromOperator = ( value, op ): any => {
-    switch ( op ) {
-    case Operator.eq:
-        return eq( value )
-
-    case Operator.gt:
-        return gt( placeholder, value )
-
-    case Operator.gte:
-        return gte( placeholder, value )
-
-    case Operator.lt:
-        return lt( placeholder, value )
-
-    case Operator.lte:
-        return lte( placeholder, value )
-    }
-}
+import { forEach, has, isEmpty, keys, omit, transform } from '../lodash'
 
 export interface RelationWhereConfig {
     foreignKey: string;
@@ -40,12 +20,21 @@ export interface RelationWhere {
     filters: Where;
 }
 
-export const iterateWhere = ( where: Where, callback: ( field: string, op: Operator, value: any ) => void ): void => {
-    forEach( where, ( opWithValue, field ) => {
-        forEach( opWithValue, ( value, op: Operator ) => {
-            callback( field, op, value )
-        } )
-    } )
+/**
+ * Iterates over a flat Where object calling callback for each field:operator:value combination.
+ *
+ * Example: given `{ name: { contains: "dsd" }, age: { gt: 18 } }`
+ * it calls:
+ *   callback("name", "contains", "dsd")
+ *   callback("age",  "gt",       18)
+ */
+export const iterateWhere = ( where: Where, callback: ( field: string, op: Operator, value: WhereFilter ) => void ): void => {
+    for ( const [ field, operators ] of Object.entries( where ) ) {
+        if ( typeof operators !== 'object' ) continue
+        for ( const [ op, value ] of Object.entries( operators ) ) {
+            callback( field, op as Operator, value as WhereFilter )
+        }
+    }
 }
 
 export const iterateRelationsWhere = async ( where: Record<string, RelationWhere>, callback: ( relationWhere: RelationWhere ) => Promise<boolean> ): Promise<boolean> => {
@@ -101,7 +90,7 @@ export const iterateWhereRelationsFilter =  async ( relationFilter: Record<strin
     } )
 }
 
-export const iterateBaseFilter = ( where: Record<string, any> ): Where => {
+export const iterateBaseFilter = ( where: Where ): Where => {
     return transform( where, ( result: Record<string, Where>, value: any, key: string ) => {
         if ( key !== Operator.or && key !== Operator.and && has( value, 'filters' ) === false ) {
             result[ key ] = value
@@ -116,32 +105,4 @@ export const getRelationItemKeyId = ( item: any, relation: RelationWhereConfig )
         return { itemId, key: `id` }
     }
     return { itemId: item.id, key: relation.foreignKey }
-}
-
-
-export const iterateFilters = ( where: Where ): Where => {
-    const filters: Where = {}
-    forEach( where, ( opWithValue, field: any ) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        if ( opWithValue.model! ) {
-            forEach( opWithValue, ( value, op: Operator ) => {
-                filters[field] = { op, value }
-            } )
-        }
-    } )
-    return filters
-}
-
-export const createFilter = ( where: Where ): any => {
-    const funcs = []
-    iterateWhere( where, ( field, op, value ) => {
-        const opFilter = createFilterFromOperator( value, op )
-        funcs.push( row => opFilter( get( row, field ) ) )
-    } )
-    return fpFilter<any[]>( flow( funcs ) )
-}
-
-export const filter = ( rows: any[], where: Where ): any => {
-    const composedFilter = createFilter( where )
-    return composedFilter( rows )
 }
