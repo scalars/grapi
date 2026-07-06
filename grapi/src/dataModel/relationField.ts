@@ -6,13 +6,14 @@ import { DataModelType } from './type'
 
 export type ModelOrThunk = Model | ( () => Model );
 export type RelationConfigOrThunk = Record<string, any> | ( () => Record<string, any> );
+export type RelationConfig = Record<string, any>
 
 export default class RelationField extends Field {
-    private relationTo: ModelOrThunk;
-    private relationConfig?: RelationConfigOrThunk;
-    private relationName?: string;
-    private relationType?: RelationType;
-    private relation?: RelationShip;
+    private relationTo: ModelOrThunk
+    private relationConfig?: RelationConfigOrThunk
+    private relationName?: string
+    private relationType?: RelationType
+    private relation?: RelationShip
 
     constructor( {
         relationTo,
@@ -50,7 +51,7 @@ export default class RelationField extends Field {
         return isFunction( this.relationTo ) ? this.relationTo() : this.relationTo
     }
 
-    public getRelationConfig(): Record<string, any> {
+    public getRelationConfig(): RelationConfig {
         if ( !this.relationConfig ) {
             return {}
         }

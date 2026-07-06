@@ -1,4 +1,4 @@
-import { ListFindQuery, Operator, OrderInputPlugin, WhereInputPlugin } from '..'
+import { ListFindQuery, Operator, OrderInputPlugin, WhereFilter, WhereInputPlugin } from '..'
 import { Model, RelationType } from '../dataModel'
 import { get } from '../lodash'
 import { InputRecursiveRelation } from './index'
@@ -6,10 +6,10 @@ import { Relation } from './interface'
 
 // many-to-many
 export default class ManyToMany implements Relation {
-    private readonly modelA: Model;
-    private readonly modelB: Model;
-    private readonly modelAField: string;
-    private readonly modelBField: string;
+    private readonly modelA: Model
+    private readonly modelB: Model
+    private readonly modelAField: string
+    private readonly modelBField?: string
 
     constructor( {
         modelA,
@@ -44,7 +44,7 @@ export default class ManyToMany implements Relation {
         return this.modelB
     }
 
-    public getModelBField(): string {
+    public getModelBField(): string | undefined {
         return this.modelBField
     }
 
@@ -117,12 +117,12 @@ export default class ManyToMany implements Relation {
     }
 
     public async deleteAndRemoveIdFromModelA( { modelAId, modelBId }: {modelAId: string; modelBId: string}, context: any ) {
-        await this.modelA.getDataSource().delete( { id: { [Operator.eq]: modelAId } } )
+        await this.modelA.getDataSource().delete( { id: { [Operator.eq]: modelAId } as WhereFilter } )
         return this.removeId( { modelAId, modelBId }, context )
     }
 
     public async deleteAndRemoveIdFromModelB( { modelAId, modelBId }: {modelAId: string; modelBId: string}, context: any ) {
-        await this.modelB.getDataSource().delete( { id: { [Operator.eq]: modelBId } } )
+        await this.modelB.getDataSource().delete( { id: { [Operator.eq]: modelBId } as WhereFilter } )
         return this.removeId( { modelAId, modelBId }, context )
     }
 
