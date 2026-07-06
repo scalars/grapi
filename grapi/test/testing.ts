@@ -1,8 +1,8 @@
 import { ApolloServer, } from '@apollo/server'
 import { startStandaloneServer } from '@apollo/server/standalone'
+import { DataSource, Grapi } from '@grapi/server'
 
 import { MongodbDataSourceGroup } from '../../grapi-mongodb/src'
-import { Grapi } from '../src'
 
 const schema = `
 directive @content on FIELD_DEFINITION | QUERY | MUTATION | FIELD
@@ -51,9 +51,13 @@ const db_name = 'local-db'
 export const testingGrapi = async ( ): Promise<void> => {
     const mongodbDataSourceGroup = new MongodbDataSourceGroup( mongouri, db_name )
     await mongodbDataSourceGroup.initialize()
+    const dataSources: Record<string, DataSource> = {}
     
     const grapi = new Grapi( { skipPrint: true, sdl: schema, dataSources: {
-        mongodb: ( args ) => mongodbDataSourceGroup.getDataSource( args.key )
+        mongodb: ( args: { key: string } ) => {
+            dataSources[args.key] = mongodbDataSourceGroup.getDataSource( args.key )
+            return dataSources[args.key]
+        },
     } } )
     const server = new ApolloServer( grapi.createApolloConfig() )
 

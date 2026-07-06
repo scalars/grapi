@@ -2,7 +2,8 @@
  * OneModel is for simple CRUD tests
  */
 
-import { DataSource } from '../src'
+import { DataSource } from '@grapi/server'
+
 import { sdl, testSuits } from './testsuites/oneModel'
 import { createGrapiApp, MongodbDataSourceGroup, prepareConfig } from './testsuites/utils'
 
@@ -17,7 +18,7 @@ describe( 'Tests on fixtures/oneModel.graphql with MongoDB Data Source', functio
         await mongodbDataSourceGroup.initialize()
 
         const { graphqlRequest, close } = createGrapiApp( sdl, {
-            memory: args => {
+            memory: ( args: { key: string } ) => {
                 dataSources[args.key] = mongodbDataSourceGroup.getDataSource( args.key )
                 return dataSources[args.key]
             },
