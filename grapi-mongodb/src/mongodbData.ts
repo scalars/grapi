@@ -166,10 +166,9 @@ export class MongodbData {
 
     // eslint-disable-next-line max-lines-per-function
     public async executeRelationFilters( where: Record<string, RelationWhere>, data: Array<{ id: string }>, filtered: Array<{ id: string }> = [] ): Promise<Array<{ id: string }>> {
-        // Pre-fetch one-to-many children in a single batch query for all items.
-        // This eliminates the N+1 problem: instead of one DB round-trip per parent item,
-        // we do one $in query covering all parents, then evaluate in-memory.
+        // Pre-fetch relation data in batch queries to eliminate N+1 round-trips.
         const batchCache = await this.batchFetchOneToManyChildren( where, data )
+        const toOneCache = await this.batchFetchToOneRelations( where, data )
 
         for ( const item of data ) {
             // eslint-disable-next-line max-lines-per-function
@@ -200,7 +199,6 @@ export class MongodbData {
                             targetKey,
                             iterateBaseFilter( filters )
                         )
-                        relationData = compact( relationData )
                     } else {
                         relationData = await this.findManyRelation(
                             foreignKeyValue,
@@ -267,8 +265,14 @@ export class MongodbData {
                             if ( neqValue !== undefined ) return itemId !== neqValue
                             return false
                         }
-                        const filters = assign( { [ key ]: { eq: itemId } }, relationWhere.filters )
-                        relationData = await this.findOneRelation( relationWhere.targetKey, iterateBaseFilter( filters ) )
+                        // Use batched cache when available, fall back to per-item findOne
+                        const cachedToOne = toOneCache.get( `${relationWhere.targetKey}:${key}` )
+                        if ( cachedToOne ) {
+                            relationData = cachedToOne.get( itemId ) || null
+                        } else {
+                            const filters = assign( { [ key ]: { eq: itemId } }, relationWhere.filters )
+                            relationData = await this.findOneRelation( relationWhere.targetKey, iterateBaseFilter( filters ) )
+                        }
                     }
                     if ( relationData && isEmpty( relations ) === false ) {
                         const recursiveFilter = await this.executeRelationFilters( relations, [ relationData as { id: string } ] )
@@ -326,29 +330,85 @@ export class MongodbData {
                 .toArray()
 
             // Group children by parent foreign key
-            const grouped = new Map<string, unknown[]>()
-            for ( const child of allChildren ) {
-                const parentId = child[fkValue] as string
-                if ( !grouped.has( parentId ) ) grouped.set( parentId, [] )
-                grouped.get( parentId )!.push( child )
-            }
+            const grouped = this.groupChildrenByParent( allChildren, fkValue )
             cache.set( cacheKey, grouped )
 
-            // Also batch-fetch unfiltered totals (needed for EVERY evaluation)
-            const totalFilterQuery = this.whereToFilterQuery( {
-                [fkValue]: { [Operator.in]: parentIds },
-            } as Where )
-            const allTotalChildren = await this.db.collection( targetKey )
-                .find( totalFilterQuery )
+            // Unfiltered totals needed only for EVERY evaluation.
+            // SOME and NONE don't need them — skip the second query.
+            const filterType = relationWhere.relation?.filter
+            const needsTotals = !filterType || filterType === FilterListObject.EVERY
+            if ( needsTotals ) {
+                const totalFilterQuery = this.whereToFilterQuery( {
+                    [fkValue]: { [Operator.in]: parentIds },
+                } as Where )
+                const allTotalChildren = await this.db.collection( targetKey )
+                    .find( totalFilterQuery )
+                    .project( { _id: 0 } )
+                    .toArray()
+                cache.set( `${cacheKey}:total`, this.groupChildrenByParent( allTotalChildren, fkValue ) )
+            }
+        }
+        return cache
+    }
+
+    /** Group an array of child documents by a parent foreign key. */
+    private groupChildrenByParent( children: unknown[], fkValue: string ): Map<string, unknown[]> {
+        const grouped = new Map<string, unknown[]>()
+        for ( const child of children ) {
+            const parentId = ( child as Record<string, any> )[fkValue] as string
+            if ( !grouped.has( parentId ) ) grouped.set( parentId, [] )
+            grouped.get( parentId )!.push( child )
+        }
+        return grouped
+    }
+
+    /** Batch-fetch to-one related documents for all items in a single $in query. */
+    private async batchFetchToOneRelations(
+        where: Record<string, RelationWhere>,
+        data: Array<{ id: string }>
+    ): Promise<Map<string, Map<string, unknown>>> {
+        const cache = new Map<string, Map<string, unknown>>()
+
+        for ( const relationWhere of Object.values( where ) ) {
+            const relation = relationWhere.relation
+            if ( !relation || relation.list ) continue  // to-one only
+
+            const { filters, targetKey } = relationWhere
+
+            // Skip if nested relations or short-circuit id filter present
+            const hasNested = Object.values( filters || {} ).some(
+                ( v: any ) => v && v.relation
+            )
+            if ( hasNested || get( relationWhere, 'filters.id' ) ) continue
+
+            // All items share the same key for the same relation
+            const itemRefs = data.map( item => getRelationItemKeyId( item, relation ) )
+            const key = itemRefs[0]?.key
+            if ( !key ) continue
+
+            const ids = itemRefs.map( r => r.itemId ).filter( Boolean )
+            if ( isEmpty( ids ) ) continue
+
+            const cacheKey = `${targetKey}:${key}`
+            if ( cache.has( cacheKey ) ) continue
+
+            // Single $in query instead of N findOne calls
+            const baseFilters = iterateBaseFilter( filters )
+            const filterQuery = this.whereToFilterQuery( {
+                ...baseFilters,
+                [key]: { [Operator.in]: ids },
+            } as unknown as Where )
+            const docs = await this.db.collection( targetKey )
+                .find( filterQuery )
                 .project( { _id: 0 } )
                 .toArray()
-            const totalGrouped = new Map<string, unknown[]>()
-            for ( const child of allTotalChildren ) {
-                const parentId = child[fkValue] as string
-                if ( !totalGrouped.has( parentId ) ) totalGrouped.set( parentId, [] )
-                totalGrouped.get( parentId )!.push( child )
+
+            // Index by key value for O(1) per-item lookup
+            const indexed = new Map<string, unknown>()
+            for ( const doc of docs ) {
+                indexed.set( ( doc as Record<string, any> )[key] as string, doc )
             }
-            cache.set( `${cacheKey}:total`, totalGrouped )
+            cache.set( cacheKey, indexed )
         }
         return cache
     }
