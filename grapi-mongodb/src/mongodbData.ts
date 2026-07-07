@@ -20,6 +20,7 @@ import {
     compact,
     concat,
     get,
+    includes,
     isEmpty,
     isEqual,
     toLower,
@@ -30,11 +31,6 @@ import {
     batchFetchToOneRelations,
     classifyFilters,
     collectNestedRelations,
-    filterManyFromManyRelation,
-    findInCollection,
-    findManyRelation,
-    findOneInCollection,
-    findOneRelation,
     findRecursiveOperator,
     handleMongoDbError,
     peelInlineDbFilters,
@@ -51,14 +47,20 @@ export class MongodbData {
         this.collectionName = collectionName
     }
 
-    // ── Public delegators (preserve API for MongodbDataSource) ──────
+    // ── Query helpers ────────────────────────────────────────────────
 
     public async findOneInCollection( filterQuery: Filter<unknown> ): Promise<unknown> {
-        return findOneInCollection( this.db, this.collectionName, filterQuery )
+        return this.db.collection( this.collectionName ).findOne( filterQuery )
     }
 
     public async findInCollection( filterQuery: Filter<unknown>, orderBy = {}, pagination: Pagination = {} ): Promise<unknown[]> {
-        return findInCollection( this.db, this.collectionName, filterQuery, orderBy, pagination )
+        return await this.db.collection( this.collectionName )
+            .find( filterQuery )
+            .sort( orderBy )
+            .skip( pagination.skip || 0 )
+            .limit( pagination.take || 0 )
+            .project( { _id: 0 } )
+            .toArray()
     }
 
     public whereToFilterQuery( where: Where | Array<Where>, operator: Operator | undefined = undefined ): Filter<Record<string, unknown>> {
@@ -78,15 +80,37 @@ export class MongodbData {
     }
 
     public async findOneRelation( collectionName: string, where: Where ): Promise<unknown> {
-        return findOneRelation( this.db, collectionName, where )
+        return this.db.collection( collectionName ).findOne( this.whereToFilterQuery( where ) )
     }
 
     public async findManyRelation( foreignKey: string, foreignId: string, collectionName: string, where: Where ): Promise<unknown[]> {
-        return findManyRelation( this.db, foreignKey, foreignId, collectionName, where )
+        const filterQuery: Filter<unknown> = this.whereToFilterQuery( { ...where, [foreignKey]: { [Operator.eq]: foreignId } } as Where )
+        return await this.db.collection( collectionName )
+            .find( filterQuery )
+            .project( { _id: 0 } )
+            .toArray()
     }
 
     public async filterManyFromManyRelation( sourceSideName: string, targetSideName: string, sourceSideId: string, collection: string, where: Record<string, any> ): Promise<unknown[]> {
-        return filterManyFromManyRelation( this.db, sourceSideName, targetSideName, sourceSideId, collection, where )
+        const relationTableName = `_${sourceSideName}_${targetSideName}`
+        const relationData = await this.db.collection( relationTableName ).findOne( { sourceSideId } )
+        const relationIds: string[] = get( relationData, `targetSideIds`, [] )
+
+        if ( isEmpty( relationIds ) ) return []
+
+        const eqFilter = get( where, 'id.eq' )
+        const idsToQuery: string[] = eqFilter
+            ? ( includes( relationIds, eqFilter ) ? [ eqFilter ] : [] )
+            : relationIds
+
+        if ( isEmpty( idsToQuery ) ) return []
+
+        const batchWhere = { ...where, id: { [Operator.in]: idsToQuery } }
+        const filterQuery: Filter<unknown> = this.whereToFilterQuery( batchWhere as unknown as Where )
+        return await this.db.collection( collection )
+            .find( filterQuery )
+            .project( { _id: 0 } )
+            .toArray()
     }
 
     // ── Core recursive filtering ────────────────────────────────────
@@ -97,7 +121,7 @@ export class MongodbData {
         await iterateWhereFilter( where, async ( filterGroup: ( Record<string, RelationWhere> | Array<Record<string, RelationWhere>> ), op: ( Operator | WhereOperator ) ) => {
             if ( op as WhereOperator === WhereOperator.relation ) {
                 if ( !isSeeded ) {
-                    data = await findInCollection( this.db, this.collectionName, {}, orderBy, pagination )
+                    data = await this.findInCollection( {}, orderBy, pagination )
                     isSeeded = true
                 }
                 data = await this.executeRelationFilters( filterGroup as Record<string, RelationWhere>, data as Array<{ id: string }> )
@@ -108,7 +132,7 @@ export class MongodbData {
 
             if ( isEmpty( dbFilters ) === false || op === WhereOperator.base || isEmpty( filterGroup ) ) {
                 const filters = isEmpty( dbFilters ) ? filterGroup : dbFilters
-                data = await findInCollection( this.db, this.collectionName, whereToFilterQuery( filters, op as Operator ), orderBy, isEmpty( relFilters ) ? pagination : {} )
+                data = await this.findInCollection( whereToFilterQuery( filters, op as Operator ), orderBy, isEmpty( relFilters ) ? pagination : {} )
                 isSeeded = true
             }
 
@@ -129,8 +153,8 @@ export class MongodbData {
         const queryFn = whereToFilterQuery
 
         const seed: unknown[] = ( op === Operator.or && isEmpty( inlineDbFilters ) )
-            ? await findInCollection( this.db, this.collectionName, {} )
-            : await findInCollection( this.db, this.collectionName, queryFn( inlineDbFilters as any, op as any ) )
+            ? await this.findInCollection( {} )
+            : await this.findInCollection( queryFn( inlineDbFilters as any, op as any ) )
 
         if ( op === Operator.or ) {
             const results = await Promise.all(
@@ -204,13 +228,13 @@ export class MongodbData {
         if ( !isManyToMany && cached ) {
             relationData = cached.get( item.id ) || []
         } else if ( isManyToMany ) {
-            relationData = await filterManyFromManyRelation(
-                this.db, toLower( source || '' ), toLower( target || '' ),
+            relationData = await this.filterManyFromManyRelation(
+                toLower( source || '' ), toLower( target || '' ),
                 item.id, targetKey, iterateBaseFilter( filters )
             )
         } else {
-            relationData = await findManyRelation(
-                this.db, fkValue, item.id, targetKey, filters
+            relationData = await this.findManyRelation(
+                fkValue, item.id, targetKey, filters
             )
         }
 
@@ -229,13 +253,13 @@ export class MongodbData {
                 if ( cachedTotal ) {
                     totalData = cachedTotal.get( item.id ) || []
                 } else if ( isManyToMany ) {
-                    totalData = await filterManyFromManyRelation(
-                        this.db, toLower( source || '' ), toLower( target || '' ),
+                    totalData = await this.filterManyFromManyRelation(
+                        toLower( source || '' ), toLower( target || '' ),
                         item.id, targetKey, {}
                     )
                 } else {
-                    totalData = await findManyRelation(
-                        this.db, fkValue, item.id, targetKey, filters
+                    totalData = await this.findManyRelation(
+                        fkValue, item.id, targetKey, filters
                     )
                 }
                 passed = totalData.length === relationData.length
@@ -271,8 +295,7 @@ export class MongodbData {
         const cached = cache.get( `${relationWhere.targetKey}:${key}` )
         const relationData: any = cached
             ? ( cached.get( itemId ) || null )
-            : await findOneRelation(
-                this.db,
+            : await this.findOneRelation(
                 relationWhere.targetKey,
                 iterateBaseFilter( assign( { [ key ]: { eq: itemId } }, relationWhere.filters ) )
             )

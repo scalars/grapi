@@ -5,7 +5,6 @@ import {
     iterateWhere,
     Mutation,
     Operator,
-    Pagination,
     RelationShip,
     RelationWhere,
     Where,
@@ -18,12 +17,9 @@ import { Db, Filter } from 'mongodb'
 import {
     assign,
     capitalize,
-    compact,
-    concat,
     findKey,
     forEach,
     get,
-    includes,
     isEmpty,
     isEqual,
     keys,
@@ -90,6 +86,16 @@ export function collectNestedRelations( relationWhere: RelationWhere ): Record<s
     return relations
 }
 
+/** Extracts AND/OR operator and its associated filters from a Where object. */
+export function findRecursiveOperator( where: Where ): { operator?: Operator; filters?: Array<Where> } {
+    if ( get( where, Operator.or ) ) {
+        return { operator: Operator.or, filters: where[Operator.or] }
+    } else if ( get( where, Operator.and ) ) {
+        return { operator: Operator.and, filters: where[Operator.and] }
+    }
+    return {}
+}
+
 /** Translates Grapi's Where format into a MongoDB Filter<Document>. */
 export function whereToFilterQuery( where: Where | Array<Where>, operator: Operator | undefined = undefined ): Filter<Record<string, unknown>> {
     const filterQuery: Record<string, unknown> = {}
@@ -130,16 +136,6 @@ export function whereToFilterQuery( where: Where | Array<Where>, operator: Opera
     return filterQuery
 }
 
-/** Extracts AND/OR operator and its associated filters from a Where object. */
-export function findRecursiveOperator( where: Where ): { operator?: Operator; filters?: Array<Where> } {
-    if ( get( where, Operator.or ) ) {
-        return { operator: Operator.or, filters: where[Operator.or] }
-    } else if ( get( where, Operator.and ) ) {
-        return { operator: Operator.and, filters: where[Operator.and] }
-    }
-    return {}
-}
-
 /** Converts a Grapi Mutation into a MongoDB update document. */
 export function transformMutation( mutation: Mutation, set: boolean = false ): Record<string, unknown> {
     const payload = set ? { $set: mutation.getData() } : mutation.getData()
@@ -158,61 +154,6 @@ export function transformMutation( mutation: Mutation, set: boolean = false ): R
         }
     } )
     return payload
-}
-
-// ── DB-dependent utilities ─────────────────────────────────────────
-
-/** Query a single document from a collection. */
-export async function findOneInCollection( db: Db, collectionName: string, filterQuery: Filter<unknown> ): Promise<unknown> {
-    return db.collection( collectionName ).findOne( filterQuery )
-}
-
-/** Query documents from a collection with optional sorting and pagination. */
-export async function findInCollection( db: Db, collectionName: string, filterQuery: Filter<unknown>, orderBy = {}, pagination: Pagination = {} ): Promise<unknown[]> {
-    return await db.collection( collectionName )
-        .find( filterQuery )
-        .sort( orderBy )
-        .skip( pagination.skip || 0 )
-        .limit( pagination.take || 0 )
-        .project( { _id: 0 } )
-        .toArray()
-}
-
-/** Query a single document from a named collection using a Grapi Where filter. */
-export async function findOneRelation( db: Db, collectionName: string, where: Where ): Promise<unknown> {
-    return db.collection( collectionName ).findOne( whereToFilterQuery( where ) )
-}
-
-/** Query child documents that reference a parent via a foreign key. */
-export async function findManyRelation( db: Db, foreignKey: string, foreignId: string, collectionName: string, where: Where ): Promise<unknown[]> {
-    const filterQuery: Filter<unknown> = whereToFilterQuery( { ...where, [foreignKey]: { [Operator.eq]: foreignId } } as Where )
-    return await db.collection( collectionName )
-        .find( filterQuery )
-        .project( { _id: 0 } )
-        .toArray()
-}
-
-/** Resolve many-to-many relation IDs through the join collection, then batch-fetch the target documents. */
-export async function filterManyFromManyRelation( db: Db, sourceSideName: string, targetSideName: string, sourceSideId: string, collection: string, where: Record<string, any> ): Promise<unknown[]> {
-    const relationTableName = `_${sourceSideName}_${targetSideName}`
-    const relationData = await db.collection( relationTableName ).findOne( { sourceSideId } )
-    const relationIds: string[] = get( relationData, `targetSideIds`, [] )
-
-    if ( isEmpty( relationIds ) ) return []
-
-    const eqFilter = get( where, 'id.eq' )
-    const idsToQuery: string[] = eqFilter
-        ? ( includes( relationIds, eqFilter ) ? [ eqFilter ] : [] )
-        : relationIds
-
-    if ( isEmpty( idsToQuery ) ) return []
-
-    const batchWhere = { ...where, id: { [Operator.in]: idsToQuery } }
-    const filterQuery: Filter<unknown> = whereToFilterQuery( batchWhere as unknown as Where )
-    return await db.collection( collection )
-        .find( filterQuery )
-        .project( { _id: 0 } )
-        .toArray()
 }
 
 /** Translates common MongoDB errors into user-friendly messages. */
