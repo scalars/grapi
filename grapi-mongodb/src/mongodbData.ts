@@ -11,7 +11,6 @@ import {
     Pagination,
     RelationShip,
     RelationWhere,
-    RelationWhereConfig,
     Where,
     WhereFilter,
     WhereOperator
@@ -164,129 +163,152 @@ export class MongodbData {
         return rows
     }
 
-    // eslint-disable-next-line max-lines-per-function
     public async executeRelationFilters( where: Record<string, RelationWhere>, data: Array<{ id: string }>, filtered: Array<{ id: string }> = [] ): Promise<Array<{ id: string }>> {
         // Pre-fetch relation data in batch queries to eliminate N+1 round-trips.
-        const batchCache = await this.batchFetchOneToManyChildren( where, data )
+        const listCache = await this.batchFetchOneToManyChildren( where, data )
         const toOneCache = await this.batchFetchToOneRelations( where, data )
 
         for ( const item of data ) {
-            // eslint-disable-next-line max-lines-per-function
-            const filter: boolean = await iterateRelationsWhere( where,  async ( relationWhere: RelationWhere ): Promise<boolean> => {
-                const relation: RelationWhereConfig = relationWhere.relation
-                const relations: Record<string, RelationWhere> = {}
-                forEach( ( relationWhere.filters || {} ) as Record<string, any>, ( value: RelationWhere, key: string ) => {
-                    if ( value.relation ) { relations[ key ] = value }
-                } )
-                const { filters, targetKey } = relationWhere
-                const { list, ship, source, target, filter, foreignKey } = relation || {}
-                if ( list ) {
-                    let relationData: unknown[]
-                    const isManyToMany = ship === RelationShip.ManyToMany
-                    const foreignKeyValue = foreignKey || `${toLower( source )}Id`
-
-                    // Use batched data when available (one-to-many), fall back to per-item queries
-                    const cacheKey = `${targetKey}:${foreignKeyValue}`
-                    const cached = batchCache.get( cacheKey )
-
-                    if ( !isManyToMany && cached ) {
-                        relationData = cached.get( item.id ) || []
-                    } else if ( isManyToMany ) {
-                        relationData = await this.filterManyFromManyRelation(
-                            toLower( source ),
-                            toLower( target ),
-                            item.id,
-                            targetKey,
-                            iterateBaseFilter( filters )
-                        )
-                    } else {
-                        relationData = await this.findManyRelation(
-                            foreignKeyValue,
-                            item.id,
-                            targetKey,
-                            filters
-                        )
-                    }
-
-                    let filterWhere: boolean
-                    if ( filter === FilterListObject.SOME ) {
-                        filterWhere = ! isEmpty( relationData )
-                    } else if ( filter === FilterListObject.NONE ) {
-                        filterWhere = isEmpty( relationData )
-                    } else {
-                        // EVERY: filtered count must equal total count.
-                        // Skip the total query if filtered returned nothing — answer is already false.
-                        if ( isEmpty( relationData ) ) {
-                            filterWhere = false
-                        } else {
-                            // Use batched unfiltered data when available
-                            const totalCacheKey = `${targetKey}:${foreignKeyValue}:total`
-                            const cachedTotal = batchCache.get( totalCacheKey )
-                            let totalRelationData: unknown[]
-
-                            if ( cachedTotal ) {
-                                totalRelationData = cachedTotal.get( item.id ) || []
-                            } else if ( isManyToMany ) {
-                                totalRelationData = await this.filterManyFromManyRelation(
-                                    toLower( source ),
-                                    toLower( target ),
-                                    item.id,
-                                    targetKey,
-                                    {}
-                                )
-                            } else {
-                                totalRelationData = await this.findManyRelation(
-                                    foreignKeyValue,
-                                    item.id,
-                                    targetKey,
-                                    filters
-                                )
-                            }
-                            filterWhere = totalRelationData.length === relationData.length
-                        }
-                    }
-
-                    if ( filterWhere && isEmpty( relations ) === false ) {
-                        const recursive = await this.executeRelationFilters( relations, relationData as Array<{ id: string }> )
-                        return isEmpty( recursive ) === false
-                    }
-                    return filterWhere
-                } else {
-                    // const relationParentId = `${relationWhere.localForeignKey}Id`;
-                    // const relationParentKey = `${relationWhere.localForeignKey}${relationWhere.relationTo}Id`;
-                    // const relationBackLink = `${toLower( relationWhere.relationTo )}_${toLower( relationWhere.relationTo )}Fk`;
-                    const { itemId, key } = getRelationItemKeyId( item, relation )
-                    let relationData: any
-                    if ( itemId ) {
-                        const filterId = get( relationWhere, 'filters.id' )
-                        if ( filterId ) {
-                            const { eq: eqValue, neq: neqValue } = filterId as { eq?: string; neq?: string }
-                            if ( eqValue !== undefined ) return itemId === eqValue
-                            if ( neqValue !== undefined ) return itemId !== neqValue
-                            return false
-                        }
-                        // Use batched cache when available, fall back to per-item findOne
-                        const cachedToOne = toOneCache.get( `${relationWhere.targetKey}:${key}` )
-                        if ( cachedToOne ) {
-                            relationData = cachedToOne.get( itemId ) || null
-                        } else {
-                            const filters = assign( { [ key ]: { eq: itemId } }, relationWhere.filters )
-                            relationData = await this.findOneRelation( relationWhere.targetKey, iterateBaseFilter( filters ) )
-                        }
-                    }
-                    if ( relationData && isEmpty( relations ) === false ) {
-                        const recursiveFilter = await this.executeRelationFilters( relations, [ relationData as { id: string } ] )
-                        return isEmpty( recursiveFilter ) === false
-                    }
-                    return relationData !== null
-                }
+            const matched = await iterateRelationsWhere( where, async ( relationWhere: RelationWhere ) => {
+                return this.evaluateRelationFilter( relationWhere, item, listCache, toOneCache )
             } )
-            if ( filter === undefined ) { return data }
-            if ( filter ) {
+            if ( matched === undefined ) { return data }
+            if ( matched ) {
                 filtered.push( item )
             }
         }
         return filtered
+    }
+
+    /** Collects nested relation filters from a RelationWhere's filters object. */
+    private collectNestedRelations( relationWhere: RelationWhere ): Record<string, RelationWhere> {
+        const relations: Record<string, RelationWhere> = {}
+        forEach( ( relationWhere.filters || {} ) as Record<string, any>, ( value: RelationWhere, key: string ) => {
+            if ( value.relation ) { relations[ key ] = value }
+        } )
+        return relations
+    }
+
+    /** Dispatches a single relation filter to list or to-one evaluation. */
+    private async evaluateRelationFilter(
+        relationWhere: RelationWhere,
+        item: { id: string },
+        listCache: Map<string, Map<string, unknown[]>>,
+        toOneCache: Map<string, Map<string, unknown>>
+    ): Promise<boolean> {
+        const relations = this.collectNestedRelations( relationWhere )
+        const { list } = relationWhere.relation || {}
+
+        if ( list ) {
+            return this.evaluateListRelation( relationWhere, item, relations, listCache )
+        }
+        return this.evaluateToOneRelation( relationWhere, item, relations, toOneCache )
+    }
+
+    /** Evaluates a to-many (list) relation filter for one item, using batched cache when available. */
+    // eslint-disable-next-line max-lines-per-function
+    private async evaluateListRelation(
+        relationWhere: RelationWhere,
+        item: { id: string },
+        relations: Record<string, RelationWhere>,
+        cache: Map<string, Map<string, unknown[]>>
+    ): Promise<boolean> {
+        const { filters, targetKey } = relationWhere
+        const { ship, source, target, filter, foreignKey } = relationWhere.relation || {}
+        const isManyToMany = ship === RelationShip.ManyToMany
+        const fkValue = foreignKey || `${toLower( source || '' )}Id`
+        const cacheKey = `${targetKey}:${fkValue}`
+        const cached = cache.get( cacheKey )
+
+        // Fetch children: batched cache → manyToMany query → per-item query
+        let relationData: unknown[]
+        if ( !isManyToMany && cached ) {
+            relationData = cached.get( item.id ) || []
+        } else if ( isManyToMany ) {
+            relationData = await this.filterManyFromManyRelation(
+                toLower( source || '' ),
+                toLower( target || '' ),
+                item.id,
+                targetKey,
+                iterateBaseFilter( filters )
+            )
+        } else {
+            relationData = await this.findManyRelation( fkValue, item.id, targetKey, filters )
+        }
+
+        // Evaluate SOME / NONE / EVERY
+        let passed: boolean
+        if ( filter === FilterListObject.SOME ) {
+            passed = !isEmpty( relationData )
+        } else if ( filter === FilterListObject.NONE ) {
+            passed = isEmpty( relationData )
+        } else {
+            if ( isEmpty( relationData ) ) {
+                passed = false
+            } else {
+                // EVERY: filtered count must equal total count
+                const totalCacheKey = `${cacheKey}:total`
+                const cachedTotal = cache.get( totalCacheKey )
+                let totalData: unknown[]
+                if ( cachedTotal ) {
+                    totalData = cachedTotal.get( item.id ) || []
+                } else if ( isManyToMany ) {
+                    totalData = await this.filterManyFromManyRelation(
+                        toLower( source || '' ),
+                        toLower( target || '' ),
+                        item.id,
+                        targetKey,
+                        {}
+                    )
+                } else {
+                    totalData = await this.findManyRelation( fkValue, item.id, targetKey, filters )
+                }
+                passed = totalData.length === relationData.length
+            }
+        }
+
+        if ( passed && !isEmpty( relations ) ) {
+            const recursive = await this.executeRelationFilters( relations, relationData as Array<{ id: string }> )
+            return !isEmpty( recursive )
+        }
+        return passed
+    }
+
+    /** Evaluates a to-one relation filter for one item, using batched cache when available. */
+    private async evaluateToOneRelation(
+        relationWhere: RelationWhere,
+        item: { id: string },
+        relations: Record<string, RelationWhere>,
+        cache: Map<string, Map<string, unknown>>
+    ): Promise<boolean> {
+        const relation = relationWhere.relation
+        const { itemId, key } = getRelationItemKeyId( item, relation )
+
+        if ( !itemId ) return false
+
+        // Short-circuit: direct eq/neq on filters.id without DB query
+        const filterId = get( relationWhere, 'filters.id' )
+        if ( filterId ) {
+            const { eq: eqValue, neq: neqValue } = filterId as { eq?: string; neq?: string }
+            if ( eqValue !== undefined ) return itemId === eqValue
+            if ( neqValue !== undefined ) return itemId !== neqValue
+            return false
+        }
+
+        // Batched cache or per-item findOne
+        const cached = cache.get( `${relationWhere.targetKey}:${key}` )
+        const relationData: any = cached
+            ? ( cached.get( itemId ) || null )
+            : await this.findOneRelation(
+                relationWhere.targetKey,
+                iterateBaseFilter( assign( { [ key ]: { eq: itemId } }, relationWhere.filters ) )
+            )
+
+        if ( relationData && !isEmpty( relations ) ) {
+            const recursive = await this.executeRelationFilters( relations, [ relationData as { id: string } ] )
+            return !isEmpty( recursive )
+        }
+        return relationData !== null
     }
 
     /**
