@@ -141,15 +141,16 @@ export class MongodbData {
             : await this.findInCollection( this.whereToFilterQuery( inlineDbFilters as any, op as any ) )
 
         if ( op === Operator.or ) {
-            for ( const rf of relFilters ) {
-                data = concat(
-                    data,
-                    await this.executeRelationFilters(
+            // OR filters are independent — run them in parallel against the same seed
+            const results = await Promise.all(
+                relFilters.map( rf =>
+                    this.executeRelationFilters(
                         rf as unknown as Record<string, RelationWhere>,
                         seed as Array<{ id: string }>
                     )
                 )
-            }
+            )
+            data = concat( data, ...results )
             return uniqWith( compact( data ), isEqual )
         }
 
@@ -203,24 +204,30 @@ export class MongodbData {
                     } else if ( filter === FilterListObject.NONE ) {
                         filterWhere = isEmpty( relationData )
                     } else {
-                        let totalRelationData = []
-                        if ( isManyToMany ) {
-                            totalRelationData = await this.filterManyFromManyRelation(
-                                toLower( source ),
-                                toLower( target ),
-                                item.id,
-                                targetKey,
-                                {}
-                            )
+                        // EVERY: filtered count must equal total count.
+                        // Skip the total query if filtered returned nothing — answer is already false.
+                        if ( isEmpty( relationData ) ) {
+                            filterWhere = false
                         } else {
-                            totalRelationData = await this.findManyRelation(
-                                foreignKeyValue,
-                                item.id,
-                                targetKey,
-                                filters
-                            )
+                            let totalRelationData = []
+                            if ( isManyToMany ) {
+                                totalRelationData = await this.filterManyFromManyRelation(
+                                    toLower( source ),
+                                    toLower( target ),
+                                    item.id,
+                                    targetKey,
+                                    {}
+                                )
+                            } else {
+                                totalRelationData = await this.findManyRelation(
+                                    foreignKeyValue,
+                                    item.id,
+                                    targetKey,
+                                    filters
+                                )
+                            }
+                            filterWhere = totalRelationData.length === relationData.length
                         }
-                        filterWhere = totalRelationData.length === relationData.length
                     }
 
                     if ( filterWhere && isEmpty( relations ) === false ) {
