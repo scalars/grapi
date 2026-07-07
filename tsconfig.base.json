@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "composite": true,
-    "module": "CommonJS",
+    "module": "nodenext",
     "lib": ["ESNext"],
     "target": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "nodenext",
     "removeComments": true,
     "sourceMap": false,
     "declaration": true,
