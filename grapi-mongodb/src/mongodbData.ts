@@ -27,7 +27,6 @@ import {
     findKey,
     forEach,
     get,
-    has,
     includes,
     isEmpty,
     isEqual,
@@ -167,6 +166,11 @@ export class MongodbData {
 
     // eslint-disable-next-line max-lines-per-function
     public async executeRelationFilters( where: Record<string, RelationWhere>, data: Array<{ id: string }>, filtered: Array<{ id: string }> = [] ): Promise<Array<{ id: string }>> {
+        // Pre-fetch one-to-many children in a single batch query for all items.
+        // This eliminates the N+1 problem: instead of one DB round-trip per parent item,
+        // we do one $in query covering all parents, then evaluate in-memory.
+        const batchCache = await this.batchFetchOneToManyChildren( where, data )
+
         for ( const item of data ) {
             // eslint-disable-next-line max-lines-per-function
             const filter: boolean = await iterateRelationsWhere( where,  async ( relationWhere: RelationWhere ): Promise<boolean> => {
@@ -181,7 +185,14 @@ export class MongodbData {
                     let relationData: unknown[]
                     const isManyToMany = ship === RelationShip.ManyToMany
                     const foreignKeyValue = foreignKey || `${toLower( source )}Id`
-                    if ( isManyToMany ) {
+
+                    // Use batched data when available (one-to-many), fall back to per-item queries
+                    const cacheKey = `${targetKey}:${foreignKeyValue}`
+                    const cached = batchCache.get( cacheKey )
+
+                    if ( !isManyToMany && cached ) {
+                        relationData = cached.get( item.id ) || []
+                    } else if ( isManyToMany ) {
                         relationData = await this.filterManyFromManyRelation(
                             toLower( source ),
                             toLower( target ),
@@ -198,6 +209,7 @@ export class MongodbData {
                             filters
                         )
                     }
+
                     let filterWhere: boolean
                     if ( filter === FilterListObject.SOME ) {
                         filterWhere = ! isEmpty( relationData )
@@ -209,8 +221,14 @@ export class MongodbData {
                         if ( isEmpty( relationData ) ) {
                             filterWhere = false
                         } else {
-                            let totalRelationData = []
-                            if ( isManyToMany ) {
+                            // Use batched unfiltered data when available
+                            const totalCacheKey = `${targetKey}:${foreignKeyValue}:total`
+                            const cachedTotal = batchCache.get( totalCacheKey )
+                            let totalRelationData: unknown[]
+
+                            if ( cachedTotal ) {
+                                totalRelationData = cachedTotal.get( item.id ) || []
+                            } else if ( isManyToMany ) {
                                 totalRelationData = await this.filterManyFromManyRelation(
                                     toLower( source ),
                                     toLower( target ),
@@ -267,6 +285,74 @@ export class MongodbData {
         return filtered
     }
 
+    /**
+     * Pre-fetches one-to-many children for all parent items in a single $in query.
+     * Returns a map keyed by `collection:foreignKey` → itemId → children[].
+     * Also includes unfiltered totals under `collection:foreignKey:total`.
+     * Skips many-to-many relations and relationWheres with nested filters (relations).
+     */
+    private async batchFetchOneToManyChildren(
+        where: Record<string, RelationWhere>,
+        data: Array<{ id: string }>
+    ): Promise<Map<string, Map<string, unknown[]>>> {
+        const cache = new Map<string, Map<string, unknown[]>>()
+        const parentIds = data.map( item => item.id )
+
+        for ( const relationWhere of Object.values( where ) ) {
+            const { list, ship, source, foreignKey } = relationWhere.relation || {}
+            if ( !list || ship === RelationShip.ManyToMany ) continue
+
+            const { filters, targetKey } = relationWhere
+            const fkValue = foreignKey || `${toLower( source || '' )}Id`
+            const cacheKey = `${targetKey}:${fkValue}`
+            if ( cache.has( cacheKey ) ) continue  // already fetched
+
+            // Check if there are nested relations — if so, skip batching
+            // (recursive evaluation needs per-item context)
+            const hasNested = Object.values( relationWhere.filters || {} ).some(
+                ( v: any ) => v && v.relation
+            )
+            if ( hasNested ) continue
+
+            // Batch fetch: all children for all parents
+            const baseFilters = iterateBaseFilter( filters )
+            const filterQuery = this.whereToFilterQuery( {
+                ...baseFilters,
+                [fkValue]: { [Operator.in]: parentIds },
+            } as Where )
+            const allChildren = await this.db.collection( targetKey )
+                .find( filterQuery )
+                .project( { _id: 0 } )
+                .toArray()
+
+            // Group children by parent foreign key
+            const grouped = new Map<string, unknown[]>()
+            for ( const child of allChildren ) {
+                const parentId = child[fkValue] as string
+                if ( !grouped.has( parentId ) ) grouped.set( parentId, [] )
+                grouped.get( parentId )!.push( child )
+            }
+            cache.set( cacheKey, grouped )
+
+            // Also batch-fetch unfiltered totals (needed for EVERY evaluation)
+            const totalFilterQuery = this.whereToFilterQuery( {
+                [fkValue]: { [Operator.in]: parentIds },
+            } as Where )
+            const allTotalChildren = await this.db.collection( targetKey )
+                .find( totalFilterQuery )
+                .project( { _id: 0 } )
+                .toArray()
+            const totalGrouped = new Map<string, unknown[]>()
+            for ( const child of allTotalChildren ) {
+                const parentId = child[fkValue] as string
+                if ( !totalGrouped.has( parentId ) ) totalGrouped.set( parentId, [] )
+                totalGrouped.get( parentId )!.push( child )
+            }
+            cache.set( `${cacheKey}:total`, totalGrouped )
+        }
+        return cache
+    }
+
     /** Query OneToOne relation object, used for applying filters
      * @param colectionName: Collection name where the referenced object lives
      * @param where: Filter with the referenced object ID plus additional filters
@@ -301,17 +387,25 @@ export class MongodbData {
         const relationTableName = `_${sourceSideName}_${targetSideName}`
         const relationData = await this.db.collection( relationTableName ).findOne( { sourceSideId } )
         const relationIds: string[] = get( relationData, `targetSideIds`, [] )
-        return await Promise.all(
-            relationIds.map( id => {
-                const currentWhere = { ...where }
-                if ( ! has( currentWhere, `id.eq` ) ) {
-                    currentWhere.id = { eq: id }
-                } else if ( ! includes( relationIds, get( currentWhere, `id.eq` ) ) ) {
-                    return null
-                }
-                return this.findOneRelation( collection, currentWhere )
-            } )
-        )
+
+        if ( isEmpty( relationIds ) ) return []
+
+        // Determine which IDs to query (respect existing id.eq filter)
+        const eqFilter = get( where, 'id.eq' )
+        const idsToQuery: string[] = eqFilter
+            ? ( includes( relationIds, eqFilter ) ? [ eqFilter ] : [] )
+            : relationIds
+
+        if ( isEmpty( idsToQuery ) ) return []
+
+        // Batch $in query instead of N individual findOne calls
+        const batchWhere = { ...where, id: { [Operator.in]: idsToQuery } }
+        const filterQuery: Filter<unknown> = this.whereToFilterQuery( batchWhere as unknown as Where )
+        const results = await this.db.collection( collection )
+            .find( filterQuery )
+            .project( { _id: 0 } )
+            .toArray()
+        return results
     }
 
     public whereToFilterQuery( where: Where | Array<Where>, operator: Operator | undefined = undefined ): Filter<Record<string, unknown>> {
