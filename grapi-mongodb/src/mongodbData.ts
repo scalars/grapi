@@ -60,59 +60,108 @@ export class MongodbData {
     }
 
     public async findRecursive ( where: Record<string, any>, orderBy: OrderBy, pagination: Pagination, data: unknown[] = [] ): Promise<unknown[]> {
-        let iteration: number = 0
-        await iterateWhereFilter( where, async ( whereFilter: ( Record<string, RelationWhere> | Array<Record<string, RelationWhere>> ), operator: ( Operator | WhereOperator ) ) => {
-            if ( operator as WhereOperator === WhereOperator.relation ) {
-                data = isEmpty( data ) && iteration === 0 ? await this.findInCollection( {}, orderBy, pagination ) : data
-                data = await this.executeRelationFilters( whereFilter as Record<string, RelationWhere>, data as Array<{ id: string }> )
-            } else {
-                const baseFilters: any[] = []
-                const relationFilters: RelationWhere[] = []
-                if ( operator === Operator.and || operator === Operator.or ) {
-                    forEach( whereFilter, ( item: RelationWhere ) => {
-                        if ( findKey( item, 'relation' ) ) {
-                            relationFilters.push( item )
-                        } else {
-                            baseFilters.push( item )
-                        }
-                    } )
+        let isSeeded = false
+
+        await iterateWhereFilter( where, async ( filterGroup: ( Record<string, RelationWhere> | Array<Record<string, RelationWhere>> ), op: ( Operator | WhereOperator ) ) => {
+            if ( op as WhereOperator === WhereOperator.relation ) {
+                if ( !isSeeded ) {
+                    data = await this.findInCollection( {}, orderBy, pagination )
+                    isSeeded = true
                 }
-                if ( isEmpty( baseFilters ) === false || ( operator as any ) === WhereOperator.base || isEmpty( whereFilter ) ) {
-                    const filters: any = isEmpty( baseFilters ) ? whereFilter : baseFilters
-                    const filterQuery: Filter<unknown> = this.whereToFilterQuery( filters, operator as Operator )
-                    data = await this.findInCollection( filterQuery, orderBy, isEmpty( relationFilters ) ? pagination : {} )
-                    iteration = iteration + 1
-                }
-                if ( isEmpty( relationFilters ) === false ) {
-                    let baseFiltersOrAnd: Where[] = []
-                    forEach( relationFilters, ( item: RelationWhere ) => {
-                        forEach( item, ( value: Where, key: string ) => {
-                            if ( ! get( value, 'relation' ) ) {
-                                delete item[key]
-                                baseFiltersOrAnd.push( { [key]: value } )
-                            }
-                        } )
-                    } )
-                    baseFiltersOrAnd = uniqWith( baseFiltersOrAnd, isEqual )
-                    const whereFiltersOrAnd = this.whereToFilterQuery(
-                        baseFiltersOrAnd as any, operator as any
-                    )
-                    const dataCollection: Array<unknown> = await this.findInCollection( whereFiltersOrAnd )
-                    if ( operator === Operator.or ) {
-                        for ( const itemWhere of relationFilters ) {
-                            data = concat( data, await this.executeRelationFilters( itemWhere as unknown as Record<string, RelationWhere>, dataCollection as Array<{ id: string }> ) )
-                        }
-                        data = uniqWith( compact( data ), isEqual )
-                    } else { // and filters
-                        data = isEmpty( data ) && iteration === 0 ? dataCollection : data
-                        for ( const itemWhere of relationFilters ) {
-                            data = await this.executeRelationFilters( itemWhere as unknown as Record<string, RelationWhere>, data as Array<{ id: string }> )
-                        }
-                    }
-                }
+                data = await this.executeRelationFilters( filterGroup as Record<string, RelationWhere>, data as Array<{ id: string }> )
+                return
+            }
+
+            const { dbFilters, relFilters } = this.classifyFilters( filterGroup, op )
+
+            if ( isEmpty( dbFilters ) === false || op === WhereOperator.base || isEmpty( filterGroup ) ) {
+                const filters = isEmpty( dbFilters ) ? filterGroup : dbFilters
+                const filterQuery: Filter<unknown> = this.whereToFilterQuery( filters, op as Operator )
+                data = await this.findInCollection( filterQuery, orderBy, isEmpty( relFilters ) ? pagination : {} )
+                isSeeded = true
+            }
+
+            if ( isEmpty( relFilters ) === false ) {
+                data = await this.combineByOperator( op, relFilters, data, isSeeded )
             }
         } )
         return data
+    }
+
+    /** Classify each filter in an AND/OR group as DB-level (plain fields) or relation-level (nested objects). */
+    private classifyFilters(
+        filterGroup: Record<string, RelationWhere | Where> | Array<Record<string, RelationWhere>>,
+        op: Operator | WhereOperator
+    ): { dbFilters: any[]; relFilters: RelationWhere[] } {
+        const dbFilters: any[] = []
+        const relFilters: RelationWhere[] = []
+
+        if ( op !== Operator.and && op !== Operator.or ) {
+            return { dbFilters, relFilters }
+        }
+
+        forEach( filterGroup as Record<string, RelationWhere>, ( item: RelationWhere ) => {
+            if ( findKey( item, 'relation' ) ) {
+                relFilters.push( item )
+            } else {
+                dbFilters.push( item )
+            }
+        } )
+        return { dbFilters, relFilters }
+    }
+
+    /** Peel inline field:value pairs (e.g. {status: "ok"}) out of relation filter objects so they can be queried directly against the DB. */
+    private peelInlineDbFilters( relFilters: RelationWhere[] ): Where[] {
+        let inlineFilters: Where[] = []
+        forEach( relFilters, ( item: RelationWhere ) => {
+            forEach( item as Record<string, any>, ( value: any, key: string ) => {
+                if ( ! get( value, 'relation' ) ) {
+                    delete ( item as Record<string, any> )[key]
+                    inlineFilters.push( { [key]: value } )
+                }
+            } )
+        } )
+        inlineFilters = uniqWith( inlineFilters, isEqual )
+        return inlineFilters
+    }
+
+    /** Combine relation filter results using AND (intersection) or OR (union). */
+    private async combineByOperator(
+        op: Operator | WhereOperator,
+        relFilters: RelationWhere[],
+        data: unknown[],
+        isSeeded: boolean
+    ): Promise<unknown[]> {
+        const inlineDbFilters = this.peelInlineDbFilters( relFilters )
+
+        // Seed collection for relation traversal.
+        // OR with no inline DB filters → query everything so relation matches aren't silently dropped.
+        const seed: unknown[] = ( op === Operator.or && isEmpty( inlineDbFilters ) )
+            ? await this.findInCollection( {} )
+            : await this.findInCollection( this.whereToFilterQuery( inlineDbFilters as any, op as any ) )
+
+        if ( op === Operator.or ) {
+            for ( const rf of relFilters ) {
+                data = concat(
+                    data,
+                    await this.executeRelationFilters(
+                        rf as unknown as Record<string, RelationWhere>,
+                        seed as Array<{ id: string }>
+                    )
+                )
+            }
+            return uniqWith( compact( data ), isEqual )
+        }
+
+        // AND: start from seed (if no prior data) then narrow through each relation filter
+        let rows = !isSeeded ? seed : data
+        for ( const rf of relFilters ) {
+            rows = await this.executeRelationFilters(
+                rf as unknown as Record<string, RelationWhere>,
+                rows as Array<{ id: string }>
+            )
+        }
+        return rows
     }
 
     // eslint-disable-next-line max-lines-per-function
@@ -122,7 +171,7 @@ export class MongodbData {
             const filter: boolean = await iterateRelationsWhere( where,  async ( relationWhere: RelationWhere ): Promise<boolean> => {
                 const relation: RelationWhereConfig = relationWhere.relation
                 const relations: Record<string, RelationWhere> = {}
-                forEach( relationWhere.filters || {}, ( value: RelationWhere, key: string ) => {
+                forEach( ( relationWhere.filters || {} ) as Record<string, any>, ( value: RelationWhere, key: string ) => {
                     if ( value.relation ) { relations[ key ] = value }
                 } )
                 const { filters, targetKey } = relationWhere
